@@ -14,12 +14,23 @@ Kontrak I/O (disepakati saat pengembangan render.js sesi ini):
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import uuid
 from decimal import Decimal
 from pathlib import Path
 
 RENDER_JS_PATH = Path(__file__).parent / "chart_renderer" / "render.js"
+
+# Observable Plot menyematkan blok <style> berisi properti CSS non-standar
+# (khususnya "height: intrinsic", spesifik Chromium) yang tidak dikenali
+# WeasyPrint -- terbukti lewat isolasi manual menyebabkan WeasyPrint salah
+# menghitung box model SVG, menghasilkan ruang kosong besar di atas chart
+# saat dirender di PDF. Strip blok ini sebelum SVG ditempel ke template --
+# styling visual chart (warna, font) sudah jadi atribut inline di setiap
+# elemen SVG (fill, font-family, dst -- lihat "currentColor" dsb di root
+# <svg>), jadi aman dihapus tanpa mengubah tampilan chart di PDF.
+_PLOT_STYLE_BLOCK_RE = re.compile(r"<style>.*?</style>", re.DOTALL)
 
 
 def _json_default(obj):
@@ -65,5 +76,10 @@ def render_chart_svg(chart_type: str, data: dict) -> str:
             f"render.js mengembalikan output yang bukan SVG valid (chart_type={chart_type}): "
             f"{svg[:200]!r}"
         )
+
+    # Lihat rationale _PLOT_STYLE_BLOCK_RE di atas -- WeasyPrint-specific fix,
+    # tidak mengubah tampilan chart, hanya menghapus CSS yang tidak dikenali
+    # WeasyPrint dan menyebabkan layout box salah hitung.
+    svg = _PLOT_STYLE_BLOCK_RE.sub("", svg, count=1)
 
     return svg
