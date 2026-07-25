@@ -25,7 +25,7 @@ function renderGantt(data, document) {
     marginLeft: 220,
     width: 900,
     height: Math.max(120, rows.length * 28 + 60),
-    x: { label: "Tahun" },
+    x: { label: "Tahun", tickFormat: "d" },
     y: { label: null, domain: [...new Set(rows.map((r) => r.component_label))] },
     marks: [
       Plot.barX(rows, {
@@ -134,7 +134,7 @@ function renderConditionTrend(data, document) {
     document,
     width: 700,
     height: 300,
-    x: { label: "Tahun" },
+    x: { label: "Tahun", tickFormat: "d" },
     y: { label: "Skor Kondisi", domain: [0, 100] },
     marks,
   });
