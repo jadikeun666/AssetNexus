@@ -1,0 +1,17 @@
+# Claude
+claude.md
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Windows
+*:Zone.Identifier
+Thumbs.db
+
+# Backup
+*.zip
+
+# Catatan pribadi
+penting.txt
