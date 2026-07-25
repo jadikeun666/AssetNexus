@@ -1,0 +1,36 @@
+<div class="condition-trend-chart">
+  <header class="condition-trend-chart__header">
+    <h3 class="condition-trend-chart__title">Prakiraan Kondisi</h3>
+    @if (chartData(); as data) {
+      <span
+        class="condition-trend-chart__badge"
+        [attr.data-model]="data.model_type"
+      >
+        {{ modelLabel() }}
+      </span>
+    }
+  </header>
+
+  @if (loading()) {
+    <p class="condition-trend-chart__status">Memuat prakiraan…</p>
+  } @else if (errorMessage(); as msg) {
+    <p class="condition-trend-chart__status condition-trend-chart__status--error">
+      {{ msg }}
+    </p>
+  } @else if (chartData()?.points?.length === 0) {
+    <p class="condition-trend-chart__status">
+      Belum ada prakiraan untuk komponen ini — perlu inspeksi lebih lanjut.
+    </p>
+  }
+
+  <div #chartContainer class="condition-trend-chart__canvas"></div>
+
+  @if (chartData(); as data) {
+    @if (data.points.length > 0 && !hasConfidenceBand()) {
+      <p class="condition-trend-chart__note">
+        Band ketidakpastian belum tersedia untuk komponen ini (model dasar) —
+        akan muncul otomatis begitu cukup data inspeksi terkumpul.
+      </p>
+    }
+  }
+</div>

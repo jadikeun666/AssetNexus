@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@observablehq/plot": "^0.6.17",
+    "jsdom": "^29.1.1"
+  },
+  "type": "module"
+}

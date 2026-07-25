@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<style>
+    @page { size: A4; margin: 2cm; }
+    body { font-family: 'DejaVu Sans', sans-serif; font-size: 11pt; color: #1a1a1a; }
+    h1 { font-size: 16pt; border-bottom: 2px solid #2E7D32; padding-bottom: 6px; }
+    h2 { font-size: 13pt; margin-top: 24px; color: #2E7D32; }
+    h3 { font-size: 11.5pt; margin-top: 16px; color: #1a1a1a; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; font-size: 9.5pt; }
+    th { background-color: #f2f2f2; }
+    .header-meta { color: #555; font-size: 9.5pt; margin-bottom: 16px; }
+    .cs-badge { padding: 2px 6px; border-radius: 3px; color: white; font-size: 8.5pt; }
+    .cs-CS1, .cs-CS2 { background-color: #2E7D32; }
+    .cs-CS3 { background-color: #F9A825; }
+    .cs-CS4, .cs-CS5 { background-color: #C62828; }
+    .cover-page { page-break-after: always; }
+    .cover-meta-table td { border: none; padding: 4px 0; }
+    .cover-meta-table td:first-child { font-weight: bold; width: 220px; }
+    .asset-detail { page-break-before: always; }
+    .chart-wrap { margin: 12px 0; }
+    .chart-wrap svg { max-width: 100%; }
+    .infeasibility-note { background: #fdecea; border-left: 3px solid #C62828; padding: 10px; margin-top: 8px; }
+    .appendix-meta { color: #555; font-size: 9.5pt; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<!-- exports.md §2.1 poin 1: Cover page -->
+<div class="cover-page">
+    <h1>Rencana Pemeliharaan Aset</h1>
+    <table class="cover-meta-table">
+        <tr><td>Nama Rencana</td><td>{{ cover.plan_name }}</td></tr>
+        <tr><td>Organisasi</td><td>{{ cover.organization_name }}</td></tr>
+        <tr><td>Total Anggaran</td><td>Rp {{ cover.budget_total }}</td></tr>
+        <tr><td>Horizon Perencanaan</td><td>{{ cover.horizon_years }} tahun</td></tr>
+        <tr><td>Dihasilkan</td><td>{{ cover.generated_at }}</td></tr>
+        <tr><td>ID Optimization Run (audit)</td><td>{{ cover.run_id }}</td></tr>
+    </table>
+</div>
+
+<!-- exports.md §2.1 poin 2: Executive summary -->
+<h2>Ringkasan Eksekutif</h2>
+<table>
+    <tr><th>Nilai Objective Tercapai</th><td>{{ executive_summary.objective_value }}</td></tr>
+    <tr><th>Jumlah Aset Tercakup</th><td>{{ executive_summary.assets_covered_count }}</td></tr>
+    <tr><th>Jumlah Intervensi Terjadwal</th><td>{{ executive_summary.interventions_scheduled_count }}</td></tr>
+    <tr><th>Status Solver</th><td>{{ executive_summary.solver_status }}</td></tr>
+</table>
+{% if executive_summary.is_infeasibility_note_needed %}
+<div class="infeasibility-note">
+    <strong>Catatan:</strong> rencana ini berstatus "feasible", bukan "optimal" --
+    solver mencapai batas waktu sebelum membuktikan solusi terbaik mutlak.
+    Jadwal di bawah tetap valid dan memenuhi seluruh batasan (scheduling.md).
+</div>
+{% endif %}
+
+<!-- exports.md §2.1 poin 3: Portfolio Gantt chart -->
+<h2>Gantt Chart Portofolio</h2>
+{% if gantt_svg %}
+<div class="chart-wrap">{{ gantt_svg|safe }}</div>
+{% else %}
+<p><em>Tidak ada intervensi terjadwal pada rencana ini.</em></p>
+{% endif %}
+
+<!-- exports.md §2.1 poin 4: Budget allocation chart -->
+<h2>Alokasi Anggaran per Tahun</h2>
+<div class="chart-wrap">{{ budget_svg|safe }}</div>
+
+<!-- exports.md §2.1 poin 5: Per-asset detail pages -->
+{% for asset in per_asset %}
+<div class="asset-detail">
+    <h2>{{ asset.asset_name }} ({{ asset.asset_code }})</h2>
+    {% for component in asset.components %}
+    <h3>Komponen: {{ component.component_label }}</h3>
+    {% if component.chart_svg %}
+    <div class="chart-wrap">{{ component.chart_svg|safe }}</div>
+    {% else %}
+    <p><em>Belum ada prakiraan kondisi untuk komponen ini.</em></p>
+    {% endif %}
+    <table>
+        <thead>
+            <tr><th>Tahun</th><th>Intervensi</th><th>Biaya</th><th>Kondisi Setelah</th></tr>
+        </thead>
+        <tbody>
+            {% for row in component.schedule_rows %}
+            <tr>
+                <td>{{ row.scheduled_year }}</td>
+                <td>{{ row.intervention_name }}</td>
+                <td>Rp {{ row.cost }}</td>
+                <td><span class="cs-badge cs-{{ row.expected_state_after }}">{{ row.expected_state_after }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endfor %}
+</div>
+{% endfor %}
+
+<!-- exports.md §2.1 poin 6: Appendix -->
+<div class="asset-detail">
+    <h2>Lampiran — Jadwal Pemeliharaan Lengkap</h2>
+    <p class="appendix-meta">
+        Solver: {{ appendix.solver }} | Status: {{ appendix.status }} |
+        Runtime: {{ appendix.runtime_seconds }} detik
+    </p>
+    <table>
+        <thead>
+            <tr><th>Komponen</th><th>Tahun</th><th>Intervensi</th><th>Biaya</th><th>Kondisi Setelah</th></tr>
+        </thead>
+        <tbody>
+            {% for row in appendix.schedule_rows %}
+            <tr>
+                <td>{{ row.component_label }}</td>
+                <td>{{ row.scheduled_year }}</td>
+                <td>{{ row.intervention_name }}</td>
+                <td>Rp {{ row.cost }}</td>
+                <td><span class="cs-badge cs-{{ row.expected_state_after }}">{{ row.expected_state_after }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>

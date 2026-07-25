@@ -1,0 +1,68 @@
+// Palet: reuse warna heatmap CS1-CS5 (visualization.md §3, FIXED) sebagai
+// bahasa visual konsisten -- bukan palet baru yang bentrok dengan digital
+// twin viewer (Fase 3). Ink utama navy teknikal (#142A45), bukan hitam
+// polos -- selaras nuansa engineering-diagnostic, bukan dashboard generik.
+
+:host {
+  display: block;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #1f2937;
+}
+
+.condition-trend-chart {
+  &__header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+
+  &__title {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: #142a45;
+    margin: 0;
+  }
+
+  &__badge {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    background: #eef2f7;
+    color: #142a45;
+    letter-spacing: 0.02em;
+
+    &[data-model='fuzzy_markov'],
+    &[data-model='ctmc_latent'] {
+      background: rgba(46, 125, 50, 0.1);
+      color: #2e7d32;
+    }
+  }
+
+  &__status {
+    font-size: 0.85rem;
+    color: #64748b;
+    padding: 2rem 0;
+    text-align: center;
+
+    &--error {
+      color: #c62828;
+    }
+  }
+
+  &__canvas {
+    width: 100%;
+    min-height: 320px;
+  }
+
+  &__note {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-top: 0.5rem;
+    font-style: italic;
+  }
+}
