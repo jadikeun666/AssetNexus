@@ -1,24 +1,26 @@
 import { Component, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ConditionTrendChartComponent } from '../condition-trend-chart/condition-trend-chart.component';
+import { GanttChartComponent } from '../../maintenance/gantt-chart/gantt-chart.component';
+import { BudgetChartComponent } from '../../maintenance/budget-chart/budget-chart.component';
 
 /**
  * Halaman DEMO/VERIFIKASI MANUAL sementara -- bukan bagian permanen
- * arsitektur produk. Tujuannya cuma supaya <app-condition-trend-chart>
- * bisa dilihat visual lewat `ng serve` besok tanpa perlu halaman
- * asset-detail sungguhan (yang belum ada, itu scope sesi lain).
- *
- * organizationId/componentId diinput manual lewat form -- ganti dengan
- * UUID nyata dari database dev kamu (lihat Organization/AssetComponent
- * yang sudah ada dari test backend Fase 0/1, atau buat baru lewat
- * Django admin/shell).
+ * arsitektur produk. Diperluas sesi Fase 2 (chart Gantt + budget) dengan
+ * pola identik field organizationId/componentId yang sudah ada -- tambah
+ * runId untuk MaintenanceGanttChartService/MaintenanceBudgetChartService.
  *
  * HAPUS/ganti komponen ini begitu ada halaman asset-detail sungguhan.
  */
 @Component({
   selector: 'app-asset-detail-demo',
   standalone: true,
-  imports: [FormsModule, ConditionTrendChartComponent],
+  imports: [
+    FormsModule,
+    ConditionTrendChartComponent,
+    GanttChartComponent,
+    BudgetChartComponent,
+  ],
   template: `
     <div class="demo-page">
       <h2>Demo Verifikasi Manual — Condition Trend Chart</h2>
@@ -27,7 +29,6 @@ import { ConditionTrendChartComponent } from '../condition-trend-chart/condition
         yang dibuat test_chart_service.py, atau buat baru lewat Django
         shell), lalu klik "Muat Chart".
       </p>
-
       <div class="demo-page__form">
         <label>
           Organization ID
@@ -47,7 +48,6 @@ import { ConditionTrendChartComponent } from '../condition-trend-chart/condition
         </label>
         <button (click)="loadChart()">Muat Chart</button>
       </div>
-
       @if (activeOrgId() && activeComponentId()) {
         <app-condition-trend-chart
           [organizationId]="activeOrgId()!"
@@ -55,6 +55,39 @@ import { ConditionTrendChartComponent } from '../condition-trend-chart/condition
         />
       } @else {
         <p class="demo-page__hint">Isi form di atas dulu untuk memuat chart.</p>
+      }
+
+      <hr class="demo-page__divider" />
+
+      <h2>Demo Verifikasi Manual — Gantt &amp; Budget Chart (Fase 2)</h2>
+      <p class="demo-page__hint">
+        Isi UUID organisasi (bisa sama dengan di atas) dan UUID
+        OptimizationRun, lalu klik "Muat Chart Pemeliharaan".
+      </p>
+      <div class="demo-page__form">
+        <label>
+          Organization ID
+          <input
+            type="text"
+            [(ngModel)]="organizationIdInput2"
+            placeholder="uuid organisasi"
+          />
+        </label>
+        <label>
+          Optimization Run ID
+          <input
+            type="text"
+            [(ngModel)]="runIdInput"
+            placeholder="uuid optimization run"
+          />
+        </label>
+        <button (click)="loadMaintenanceCharts()">Muat Chart Pemeliharaan</button>
+      </div>
+      @if (activeOrgId2() && activeRunId()) {
+        <app-gantt-chart [organizationId]="activeOrgId2()!" [runId]="activeRunId()!" />
+        <app-budget-chart [organizationId]="activeOrgId2()!" [runId]="activeRunId()!" />
+      } @else {
+        <p class="demo-page__hint">Isi form di atas dulu untuk memuat chart pemeliharaan.</p>
       }
     </div>
   `,
@@ -69,6 +102,11 @@ import { ConditionTrendChartComponent } from '../condition-trend-chart/condition
       .demo-page__hint {
         font-size: 0.85rem;
         color: #64748b;
+      }
+      .demo-page__divider {
+        margin: 2rem 0;
+        border: none;
+        border-top: 1px solid #e2e8f0;
       }
       .demo-page__form {
         display: flex;
@@ -107,12 +145,21 @@ import { ConditionTrendChartComponent } from '../condition-trend-chart/condition
 export class AssetDetailDemoComponent {
   organizationIdInput = '';
   componentIdInput = '';
-
   readonly activeOrgId = signal<string | null>(null);
   readonly activeComponentId = signal<string | null>(null);
+
+  organizationIdInput2 = '';
+  runIdInput = '';
+  readonly activeOrgId2 = signal<string | null>(null);
+  readonly activeRunId = signal<string | null>(null);
 
   loadChart(): void {
     this.activeOrgId.set(this.organizationIdInput.trim() || null);
     this.activeComponentId.set(this.componentIdInput.trim() || null);
+  }
+
+  loadMaintenanceCharts(): void {
+    this.activeOrgId2.set(this.organizationIdInput2.trim() || null);
+    this.activeRunId.set(this.runIdInput.trim() || null);
   }
 }

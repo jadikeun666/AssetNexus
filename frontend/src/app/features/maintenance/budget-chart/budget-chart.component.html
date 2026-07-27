@@ -1,0 +1,27 @@
+<div class="budget-chart">
+  <header class="budget-chart__header">
+    <h3 class="budget-chart__title">Alokasi Anggaran per Tahun</h3>
+    @if (chartData(); as data) {
+      <span class="budget-chart__badge">{{ data.plan_name }}</span>
+    }
+  </header>
+
+  @if (loading()) {
+    <p class="budget-chart__status">Memuat alokasi anggaran…</p>
+  } @else if (errorMessage(); as msg) {
+    <p class="budget-chart__status budget-chart__status--error">{{ msg }}</p>
+  } @else if (chartData()?.years?.length === 0) {
+    <p class="budget-chart__status">
+      Belum ada data anggaran untuk rencana ini.
+    </p>
+  }
+
+  <div #chartContainer class="budget-chart__canvas"></div>
+
+  <p class="budget-chart__legend">
+    <span class="budget-chart__legend-swatch budget-chart__legend-swatch--cost"></span>
+    Biaya teralokasi
+    <span class="budget-chart__legend-swatch budget-chart__legend-swatch--budget"></span>
+    Plafon anggaran
+  </p>
+</div>
