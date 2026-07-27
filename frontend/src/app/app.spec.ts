@@ -14,10 +14,15 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should render title', async () => {
+  it('should render the router outlet', async () => {
+    // App murni composition root untuk routing (app.html hanya berisi
+    // <router-outlet />, sejak scaffold Fase 1 menambahkan routing ke
+    // asset-detail-demo) -- assertion lama menguji judul "Hello, frontend"
+    // dari template default ng new yang sudah tidak ada, diganti test yang
+    // relevan dengan kondisi component saat ini.
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, frontend');
+    expect(compiled.querySelector('router-outlet')).toBeTruthy();
   });
 });

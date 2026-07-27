@@ -1,0 +1,20 @@
+<div class="gantt-chart">
+  <header class="gantt-chart__header">
+    <h3 class="gantt-chart__title">Gantt Chart Pemeliharaan</h3>
+    @if (chartData(); as data) {
+      <span class="gantt-chart__badge">{{ data.plan_name }}</span>
+    }
+  </header>
+
+  @if (loading()) {
+    <p class="gantt-chart__status">Memuat jadwal pemeliharaan…</p>
+  } @else if (errorMessage(); as msg) {
+    <p class="gantt-chart__status gantt-chart__status--error">{{ msg }}</p>
+  } @else if (chartData()?.rows?.length === 0) {
+    <p class="gantt-chart__status">
+      Belum ada intervensi terjadwal untuk rencana ini.
+    </p>
+  }
+
+  <div #chartContainer class="gantt-chart__canvas"></div>
+</div>
