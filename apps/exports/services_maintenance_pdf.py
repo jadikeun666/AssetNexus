@@ -27,7 +27,7 @@ from apps.maintenance.models import MaintenancePlan, MaintenanceSchedule, Optimi
 from apps.maintenance.services_chart import MaintenanceBudgetChartService, MaintenanceGanttChartService
 
 from .chart_renderer_client import render_chart_svg
-from .storage import upload_bytes
+from apps.core.storage import upload_bytes
 
 
 class MaintenancePlanPdfService:

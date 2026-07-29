@@ -11,7 +11,7 @@ from apps.assets.models import AssetComponent
 from apps.deterioration.models import DeteriorationModel
 from apps.inspections.models import InspectionRecord
 
-from .storage import upload_bytes
+from apps.core.storage import upload_bytes
 
 
 class InspectionPdfService:

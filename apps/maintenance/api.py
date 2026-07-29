@@ -10,16 +10,21 @@ from ninja import Router
 from apps.assets.api import _current_org_stub
 
 from .schemas import (
+    BudgetChartOut,
+    GanttChartOut,
     MaintenancePlanIn,
     MaintenancePlanOut,
     MaintenanceScheduleOut,
     OptimizationRunOut,
 )
 from .services_api import MaintenanceOptimizationRunService, MaintenancePlanService
+from .services_chart import MaintenanceBudgetChartService, MaintenanceGanttChartService
 
 router = Router(tags=["maintenance"])
 plan_service = MaintenancePlanService()
 run_service = MaintenanceOptimizationRunService()
+gantt_chart_service = MaintenanceGanttChartService()
+budget_chart_service = MaintenanceBudgetChartService()
 
 
 @router.post("/plans/", response=MaintenancePlanOut)
@@ -56,3 +61,20 @@ def get_latest_run(request, plan_id: UUID):
 def get_run_schedule(request, run_id: UUID):
     org_id = _current_org_stub(request)
     return run_service.list_schedule_for_run(org_id, run_id)
+
+
+# visualization.md §5 -- Gantt chart + budget allocation chart data.
+# Read-only query service, pola sama apps/deterioration/api.py yang
+# memanggil ComponentForecastChartService langsung tanpa lewat
+# services_api.py (tidak ada orkestrasi/side-effect untuk endpoint ini).
+
+@router.get("/runs/{run_id}/gantt-chart/", response=GanttChartOut)
+def get_gantt_chart(request, run_id: UUID):
+    org_id = _current_org_stub(request)
+    return gantt_chart_service.get_gantt_data(org_id, run_id)
+
+
+@router.get("/runs/{run_id}/budget-chart/", response=BudgetChartOut)
+def get_budget_chart(request, run_id: UUID):
+    org_id = _current_org_stub(request)
+    return budget_chart_service.get_budget_data(org_id, run_id)

@@ -73,3 +73,22 @@ OPTIMIZATION = {
 CONDITION_AGGREGATION = {
     "CRITICAL_PENALTY_POINTS": 20,           # asset-registry.md §4
 }
+
+DIGITAL_TWIN = {
+    "MAX_TRIANGLE_COUNT": 150_000,            # visualization.md §7: mesh di
+    # atas ambang ini DITOLAK saat upload dengan error jelas, tidak
+    # dibiarkan lolos dan mendegradasi performa viewer secara diam-diam.
+    "TIMELINE_DEFAULT_HORIZON_YEARS": 20,      # visualization.md §4: default
+    # horizon scrubber kalau tidak ada konteks MaintenancePlan.
+    "PLAY_MS_PER_YEAR": 800,                   # visualization.md §4.2:
+    # kecepatan animasi "Play" -- 1 tahun per 800ms, warna di-eased
+    # (linear interpolation) antar tahun berurutan.
+    "INTERVENTION_SNAP_MS": 150,               # visualization.md §4.2:
+    # transisi snap-to-green KHUSUS saat playhead melewati tahun
+    # intervensi terjadwal -- sengaja TIDAK di-eased (snap), untuk
+    # membedakan visual "prediksi model" vs "efek intervensi".
+    "CS5_PULSE_EMISSIVE_MIN": 0.1,             # visualization.md §3: pulsing
+    "CS5_PULSE_EMISSIVE_MAX": 0.4,             # emissive glow komponen CS5,
+    # satu-satunya "flair" animasi selain easing timeline (§7: hanya 2
+    # requestAnimationFrame loop kontinu di seluruh viewer).
+}
