@@ -3,12 +3,13 @@ import { FormsModule } from '@angular/forms';
 import { ConditionTrendChartComponent } from '../condition-trend-chart/condition-trend-chart.component';
 import { GanttChartComponent } from '../../maintenance/gantt-chart/gantt-chart.component';
 import { BudgetChartComponent } from '../../maintenance/budget-chart/budget-chart.component';
+import { DigitalTwinViewerComponent } from '../../digitaltwin/viewer/digital-twin-viewer.component';
 
 /**
  * Halaman DEMO/VERIFIKASI MANUAL sementara -- bukan bagian permanen
- * arsitektur produk. Diperluas sesi Fase 2 (chart Gantt + budget) dengan
- * pola identik field organizationId/componentId yang sudah ada -- tambah
- * runId untuk MaintenanceGanttChartService/MaintenanceBudgetChartService.
+ * arsitektur produk. Diperluas sesi Fase 3 (digital twin viewer, langkah
+ * 4a: scene minimal) dengan pola identik field organizationId/assetId
+ * yang sudah ada.
  *
  * HAPUS/ganti komponen ini begitu ada halaman asset-detail sungguhan.
  */
@@ -20,6 +21,7 @@ import { BudgetChartComponent } from '../../maintenance/budget-chart/budget-char
     ConditionTrendChartComponent,
     GanttChartComponent,
     BudgetChartComponent,
+    DigitalTwinViewerComponent,
   ],
   template: `
     <div class="demo-page">
@@ -89,6 +91,37 @@ import { BudgetChartComponent } from '../../maintenance/budget-chart/budget-char
       } @else {
         <p class="demo-page__hint">Isi form di atas dulu untuk memuat chart pemeliharaan.</p>
       }
+
+      <hr class="demo-page__divider" />
+
+      <h2>Demo Verifikasi Manual — Digital Twin Viewer (Fase 3, langkah 4a)</h2>
+      <p class="demo-page__hint">
+        Isi UUID organisasi dan UUID asset, lalu klik "Muat Viewer". Langkah
+        4a: scene minimal (background solid), belum ada mesh/GLTFLoader.
+      </p>
+      <div class="demo-page__form">
+        <label>
+          Organization ID
+          <input
+            type="text"
+            [(ngModel)]="organizationIdInput3"
+            placeholder="uuid organisasi"
+          />
+        </label>
+        <label>
+          Asset ID
+          <input type="text" [(ngModel)]="assetIdInput" placeholder="uuid asset" />
+        </label>
+        <button (click)="loadDigitalTwinViewer()">Muat Viewer</button>
+      </div>
+      @if (activeOrgId3() && activeAssetId()) {
+        <app-digital-twin-viewer
+          [organizationId]="activeOrgId3()!"
+          [assetId]="activeAssetId()!"
+        />
+      } @else {
+        <p class="demo-page__hint">Isi form di atas dulu untuk memuat viewer.</p>
+      }
     </div>
   `,
   styles: [
@@ -153,6 +186,11 @@ export class AssetDetailDemoComponent {
   readonly activeOrgId2 = signal<string | null>(null);
   readonly activeRunId = signal<string | null>(null);
 
+  organizationIdInput3 = '';
+  assetIdInput = '';
+  readonly activeOrgId3 = signal<string | null>(null);
+  readonly activeAssetId = signal<string | null>(null);
+
   loadChart(): void {
     this.activeOrgId.set(this.organizationIdInput.trim() || null);
     this.activeComponentId.set(this.componentIdInput.trim() || null);
@@ -161,5 +199,10 @@ export class AssetDetailDemoComponent {
   loadMaintenanceCharts(): void {
     this.activeOrgId2.set(this.organizationIdInput2.trim() || null);
     this.activeRunId.set(this.runIdInput.trim() || null);
+  }
+
+  loadDigitalTwinViewer(): void {
+    this.activeOrgId3.set(this.organizationIdInput3.trim() || null);
+    this.activeAssetId.set(this.assetIdInput.trim() || null);
   }
 }
