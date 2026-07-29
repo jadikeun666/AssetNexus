@@ -20,6 +20,7 @@ INSTALLED_APPS = [
     "apps.deterioration",
     "apps.exports",
     "apps.maintenance",
+    "apps.digitaltwin",
 ]
 
 MIDDLEWARE = [

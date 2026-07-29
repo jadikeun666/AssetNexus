@@ -11,3 +11,4 @@ jax[cpu]==0.10.*
 jaxopt==0.8.5
 weasyprint==63.*
 boto3==1.35.*
+pygltflib==1.16.*

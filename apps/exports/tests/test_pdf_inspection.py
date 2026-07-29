@@ -9,7 +9,7 @@ from apps.exports.jobs import generate_pdf_export_job
 from apps.exports.models import ExportJob
 from apps.exports.services import InspectionPdfService
 from apps.exports.services_api import ExportJobService
-from apps.exports.storage import download_bytes
+from apps.core.storage import download_bytes
 from apps.inspections.models import InspectionRecord
 
 

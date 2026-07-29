@@ -39,3 +39,39 @@ class MaintenanceScheduleOut(Schema):
     scheduled_year: int
     cost: Decimal
     expected_state_after: str
+
+
+# visualization.md §5 -- Gantt chart + budget allocation chart data.
+# Skema ini MURNI serialisasi output MaintenanceGanttChartService /
+# MaintenanceBudgetChartService (services_chart.py, read-only) --
+# tidak menyentuh services_scheduling.py sama sekali.
+
+class GanttRowOut(Schema):
+    component_id: uuid.UUID
+    component_label: str
+    scheduled_year: int
+    duration_years: float
+    intervention_name: str
+    intervention_type: str
+    cost: Decimal
+    expected_state_after: str
+
+
+class GanttChartOut(Schema):
+    run_id: uuid.UUID
+    plan_id: uuid.UUID
+    plan_name: str
+    rows: list[GanttRowOut]
+
+
+class BudgetYearOut(Schema):
+    year: int
+    allocated_cost: Decimal
+    budget: Decimal
+
+
+class BudgetChartOut(Schema):
+    run_id: uuid.UUID
+    plan_id: uuid.UUID
+    plan_name: str
+    years: list[BudgetYearOut]

@@ -1,7 +1,15 @@
 """
 architecture.md §1: SeaweedFS (S3-compatible) via boto3. Ini satu-satunya
-titik akses ke object storage untuk app exports — jangan panggil boto3
+titik akses ke object storage di seluruh project — jangan panggil boto3
 langsung dari service/job lain, selalu lewat wrapper ini.
+
+Sengaja ditaruh di apps/core (bukan apps/exports) karena architecture.md
+§2 mendefinisikan `core` sebagai app cross-cutting, dan sejak Fase 2
+wrapper ini sudah dipakai lintas domain: apps/exports (PDF/Excel) dan
+apps/maintenance (solver_log_ref, scheduling.md §5) — bukan cuma exports.
+Dipindah dari apps/exports/storage.py ke apps/core/storage.py sebagai
+amandemen disengaja sesi Fase 3 (viewer digital twin butuh upload glTF
+ke SeaweedFS juga) — lihat claude.md untuk catatan revisi lengkap.
 """
 import boto3
 from django.conf import settings

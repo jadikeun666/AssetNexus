@@ -53,7 +53,7 @@ mengklaim tahu penyebabnya.
 solver_log_ref (scheduling.md par.5, TIDAK LAGI TODO): CpSolver.ResponseStats()
 plus (kalau infeasible) daftar component_id yang mandatory floor-nya
 terbukti perlu (dari SufficientAssumptionsForInfeasibility()) ditulis
-sebagai teks ke SeaweedFS via apps.exports.storage.upload_bytes(), key
+sebagai teks ke SeaweedFS via apps.core.storage.upload_bytes(), key
 disimpan ke OptimizationRun.solver_log_ref -- SATU-SATUNYA titik commit
 audit lengkap untuk sebuah run, ditulis untuk SETIAP status (bukan cuma
 saat gagal), konsisten dengan engineering-rules.md par.3.
@@ -71,7 +71,7 @@ from config.assetnexus import OPTIMIZATION
 
 from apps.assets.models import AssetComponent
 from apps.deterioration.models import DeteriorationModel
-from apps.exports.storage import upload_bytes
+from apps.core.storage import upload_bytes
 
 from .models import MaintenanceIntervention, MaintenancePlan, MaintenanceSchedule, OptimizationRun
 

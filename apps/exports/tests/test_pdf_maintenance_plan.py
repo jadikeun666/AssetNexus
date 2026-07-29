@@ -17,7 +17,7 @@ from apps.exports.jobs import generate_pdf_export_job
 from apps.exports.models import ExportJob
 from apps.exports.services_api import ExportJobService
 from apps.exports.services_maintenance_pdf import MaintenancePlanPdfService
-from apps.exports.storage import download_bytes
+from apps.core.storage import download_bytes
 from apps.maintenance.models import MaintenanceIntervention, MaintenancePlan
 from apps.maintenance.services_scheduling import MaintenanceOptimizationService
 
