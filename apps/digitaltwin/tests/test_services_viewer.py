@@ -82,10 +82,12 @@ class TestDigitalTwinViewerPayloadService:
 
         assert payload["asset_id"] == asset.id
         assert payload["digital_twin_model"]["version"] == 1
-        assert str(component.id) in payload["forecast_by_component"]
-        year_scores = payload["forecast_by_component"][str(component.id)]
-        assert len(year_scores) > 0
-        for score in year_scores.values():
+        assert len(payload["forecast_by_component"]) == 1
+        entry = payload["forecast_by_component"][0]
+        assert entry["component_id"] == component.id
+        assert entry["component_type"] == "girder"
+        assert len(entry["year_scores"]) > 0
+        for score in entry["year_scores"].values():
             assert 0.0 <= score <= 100.0
 
     def test_payload_picks_highest_version_digital_twin_model(self, org, asset):
@@ -106,7 +108,7 @@ class TestDigitalTwinViewerPayloadService:
         payload = DigitalTwinViewerPayloadService().get_viewer_payload(org.id, asset.id)
 
         assert payload["digital_twin_model"] is None
-        assert payload["forecast_by_component"] == {}
+        assert payload["forecast_by_component"] == []
 
     def test_raises_404_for_asset_in_other_organization(self, org, other_org, asset):
         with pytest.raises(Http404):
