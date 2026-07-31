@@ -50,15 +50,27 @@ class DigitalTwinViewerPayloadService:
             asset=asset, deleted_at__isnull=True
         )
 
-        forecast_by_component = {}
+        # visualization.md §1: component_type disertakan eksplisit (bukan
+        # cuma component_id) -- join key ke node glTF adalah component_type,
+        # frontend butuh tahu nama itu untuk mencocokkan node (schemas.py
+        # ComponentForecastOut, keputusan disepakati eksplisit product
+        # owner, langkah 4d).
+        forecast_by_component = []
         for component in components:
             chart_data = self._chart_service.get_chart_data(
                 organization_id=organization_id, component_id=component.id
             )
-            forecast_by_component[str(component.id)] = {
+            year_scores = {
                 str(point["forecast_year"]): point["condition_score"]
                 for point in chart_data["points"]
             }
+            forecast_by_component.append(
+                {
+                    "component_id": component.id,
+                    "component_type": component.component_type,
+                    "year_scores": year_scores,
+                }
+            )
 
         return {
             "asset_id": asset.id,

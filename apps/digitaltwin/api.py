@@ -5,6 +5,7 @@ Endpoint pertama app digitaltwin (Fase 3, prd.md §8): upload glTF
 """
 from uuid import UUID
 
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from ninja import File, Form, Router
 from ninja.errors import HttpError
@@ -12,6 +13,8 @@ from ninja.files import UploadedFile
 
 from apps.assets.api import _current_org_stub
 from apps.assets.models import Asset
+from apps.core.storage import download_bytes
+from apps.digitaltwin.models import DigitalTwinModel
 from apps.digitaltwin.services import DigitalTwinUploadService
 from apps.digitaltwin.services_validation import InvalidGltfError, TriangleCountExceededError
 from apps.digitaltwin.services_viewer import DigitalTwinViewerPayloadService
@@ -71,3 +74,26 @@ def get_viewer_payload(request, asset_id: UUID):
     timeline scrubber -- di-cache client-side, bukan query per-tahun."""
     org_id = _current_org_stub(request)
     return viewer_service.get_viewer_payload(org_id, asset_id)
+
+@router.get("/models/{model_id}/download/")
+def download_digital_twin_model(request, model_id: UUID):
+    """
+    visualization.md §1: browser TIDAK mengakses SeaweedFS langsung (butuh
+    kredensial S3 + CORS terpisah yang tidak diekspos ke publik) -- proxy
+    lewat backend kita sendiri, org-scoped (engineering-rules.md §8),
+    supaya frontend cukup tahu URL Django ini, tidak perlu tahu apa pun
+    soal SeaweedFS. Kasus PERTAMA di project yang men-serve binary
+    response langsung dari Ninja (belum ada preseden di apps/exports --
+    PDF/Excel di sana cuma menyimpan file_ref, tidak pernah di-proxy-kan
+    balik ke browser).
+    """
+    org_id = _current_org_stub(request)
+    model = get_object_or_404(
+        DigitalTwinModel.objects.for_organization(org_id),
+        id=model_id,
+        deleted_at__isnull=True,
+    )
+
+    data = download_bytes(model.file_ref)
+    return HttpResponse(data, content_type="model/gltf-binary")
+
