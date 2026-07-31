@@ -7,6 +7,15 @@
  */
 
 /**
+ * DUPLIKASI EKSPLISIT dari config/assetnexus.py DIGITAL_TWIN (backend
+ * Python) -- TypeScript tidak bisa import konstanta Python lintas bahasa,
+ * tidak ada mekanisme share-config di project ini. Kalau backend berubah,
+ * nilai ini HARUS diupdate manual di sini juga (didokumentasikan sebagai
+ * risiko drift yang disengaja, bukan disembunyikan).
+ */
+export const PLAY_MS_PER_YEAR = 800; // visualization.md §4.2
+
+/**
  * visualization.md §3: gradient 3-stop FIXED, tidak boleh diubah
  * per-deployment.
  *   condition_score 100 -> 90  : #2E7D32 (hijau, CS1)
