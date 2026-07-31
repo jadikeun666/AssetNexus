@@ -1,10 +1,17 @@
 import {
+  PLAY_MS_PER_YEAR,
   conditionScoreToColor,
   easeConditionScore,
   isCriticalState,
   pulseEmissiveIntensity,
   rgbToHex,
 } from './timeline-math';
+
+describe('PLAY_MS_PER_YEAR', () => {
+  it('persis 800ms sesuai visualization.md §4.2 dan config/assetnexus.py DIGITAL_TWIN', () => {
+    expect(PLAY_MS_PER_YEAR).toBe(800);
+  });
+});
 
 describe('conditionScoreToColor', () => {
   it('mengembalikan hijau solid persis di score=100 (CS1, hitungan tangan)', () => {
