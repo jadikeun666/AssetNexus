@@ -1,1 +1,24 @@
-<div class="viewer-container" #canvasContainer></div>
+<div class="viewer-wrapper">
+  <div class="viewer-container" #canvasContainer></div>
+  <p class="viewer-hint">tahan <kbd>Shift</kbd> untuk mode presisi (kamera berhenti instan)</p>
+</div>
+
+<!-- visualization.md §4: timeline scrubber. Drag = instan tanpa easing
+     (§4.2) -- (input) native event, bukan (change), supaya update
+     terjadi TERUS-MENERUS selama drag, bukan cuma saat mouse dilepas. -->
+<div class="timeline-scrubber">
+  <button class="timeline-scrubber__play-btn" (click)="togglePlayback()">
+    {{ isPlaying() ? 'Stop' : 'Play' }}
+  </button>
+  <span>{{ minYear() }}</span>
+  <input
+    type="range"
+    [min]="minYear()"
+    [max]="maxYear()"
+    [value]="activeYear()"
+    (input)="onScrubberInput($event)"
+    [disabled]="isPlaying()"
+  />
+  <span>{{ maxYear() }}</span>
+  <span class="timeline-scrubber__active-year">{{ activeYear() }}</span>
+</div>
