@@ -22,6 +22,19 @@ export class DigitalTwinService {
     );
   }
 
+  /**
+   * visualization.md §1: browser TIDAK mengakses SeaweedFS langsung --
+   * fetch bytes .glb lewat proxy backend (apps/digitaltwin/api.py
+   * download_digital_twin_model), org-scoped. responseType 'arraybuffer'
+   * karena ini binary (GLTFLoader.parse() butuh ArrayBuffer, bukan JSON).
+   */
+  downloadModelBytes(organizationId: string, modelId: string): Observable<ArrayBuffer> {
+    return this.http.get(`${this.baseUrl}/models/${modelId}/download/`, {
+      headers: { 'X-Organization-Id': organizationId },
+      responseType: 'arraybuffer',
+    });
+  }
+
   uploadModel(
     organizationId: string,
     assetId: string,

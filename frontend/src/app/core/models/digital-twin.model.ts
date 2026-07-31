@@ -8,12 +8,20 @@ export interface DigitalTwinModelDto {
   version: number;
 }
 
+export interface ComponentForecastDto {
+  component_id: string;
+  // visualization.md §1: join key ke node glTF -- nama node HARUS
+  // persis sama dengan component_type ini.
+  component_type: string;
+  // { forecast_year (string): condition_score } -- key JSON selalu
+  // string, forecast_year di-parse ke number saat dipakai.
+  year_scores: Record<string, number>;
+}
+
 export interface ViewerPayloadDto {
   asset_id: string;
   digital_twin_model: DigitalTwinModelDto | null;
-  // { component_id: { forecast_year (string): condition_score } }
-  // -- key JSON selalu string, forecast_year di-parse ke number saat dipakai.
-  forecast_by_component: Record<string, Record<string, number>>;
+  forecast_by_component: ComponentForecastDto[];
 }
 
 export interface DigitalTwinUploadResponseDto {
