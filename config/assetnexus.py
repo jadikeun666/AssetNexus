@@ -87,6 +87,12 @@ DIGITAL_TWIN = {
     # transisi snap-to-green KHUSUS saat playhead melewati tahun
     # intervensi terjadwal -- sengaja TIDAK di-eased (snap), untuk
     # membedakan visual "prediksi model" vs "efek intervensi".
+    "CS5_PULSE_PERIOD_MS": 2000,               # visualization.md §3: periode
+    # osilasi TIDAK dispesifikasikan dokumen (hanya rentang intensitas
+    # 0.1<->0.4) -- 2000ms disepakati eksplisit product owner, konsisten
+    # kata "subtle". Duplikasi manual di frontend
+    # (digital-twin.constants.ts) -- TypeScript tidak bisa import
+    # konstanta Python lintas bahasa.
     "CS5_PULSE_EMISSIVE_MIN": 0.1,             # visualization.md §3: pulsing
     "CS5_PULSE_EMISSIVE_MAX": 0.4,             # emissive glow komponen CS5,
     # satu-satunya "flair" animasi selain easing timeline (§7: hanya 2
