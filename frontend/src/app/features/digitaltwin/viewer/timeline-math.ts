@@ -50,6 +50,23 @@ function lerpRgb(
 }
 
 /**
+ * visualization.md §4.2: snap-to-green transition -- target warnanya
+ * LITERAL hijau (bukan hasil conditionScoreToColor dari sebuah skor),
+ * jadi butuh interpolasi RGB langsung antar 2 warna, bukan antar 2 skor
+ * seperti easeConditionScore(). Dipakai untuk transisi 150ms non-eased
+ * (INTERVENTION_SNAP_MS) saat playhead melewati tahun intervensi
+ * terjadwal.
+ */
+export function lerpColor(from: RgbColor, to: RgbColor, t: number): RgbColor {
+  const clampedT = Math.max(0, Math.min(1, t));
+  return {
+    r: lerpChannel(from.r, to.r, clampedT),
+    g: lerpChannel(from.g, to.g, clampedT),
+    b: lerpChannel(from.b, to.b, clampedT),
+  };
+}
+
+/**
  * visualization.md §3: "THREE.Color.lerpColors() interpolation across the
  * three stops keyed by condition_score / 100". Interpretasi disepakati
  * eksplisit (product owner): gradasi KONTINU 2-segmen, [90,100] hijau
@@ -80,6 +97,15 @@ export function rgbToHex(color: RgbColor): string {
   const toHex = (channel: number) => channel.toString(16).padStart(2, '0');
   return `#${toHex(color.r)}${toHex(color.g)}${toHex(color.b)}`;
 }
+
+/**
+ * visualization.md §4.2: warna solid hijau target snap-to-green -- dipilih
+ * sebagai warna LITERAL (bukan dihitung dari expected_state_after),
+ * disepakati eksplisit product owner (kontras visual "model memprediksi"
+ * vs "intervensi mengubah" akan blur kalau warnanya bisa amber untuk
+ * intervensi minor).
+ */
+export const SNAP_TO_GREEN_COLOR: RgbColor = { r: 0x2e, g: 0x7d, b: 0x32 };
 
 /**
  * visualization.md §4.2: "Play" animasi eased linear antara condition_score

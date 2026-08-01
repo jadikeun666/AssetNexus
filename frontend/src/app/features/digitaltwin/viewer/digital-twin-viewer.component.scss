@@ -57,3 +57,34 @@
   font-size: 0.8rem;
   white-space: nowrap;
 }
+
+.timeline-scrubber__track-wrapper {
+  position: relative;
+  flex: 1;
+
+  input[type='range'] {
+    width: 100%;
+    display: block;
+  }
+}
+
+.timeline-scrubber__wrench {
+  position: absolute;
+  top: -20px;
+  transform: translateX(-50%);
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #f57c00;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  cursor: help;
+  pointer-events: auto;
+  transition: transform 0.15s ease;
+
+  &:hover {
+    transform: translateX(-50%) scale(1.15);
+  }
+}

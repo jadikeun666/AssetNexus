@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { DigitalTwinUploadResponseDto, ViewerPayloadDto } from '../models/digital-twin.model';
+import { DigitalTwinUploadResponseDto, MaintenanceMarkerDto, ViewerPayloadDto } from '../models/digital-twin.model';
 
 @Injectable({ providedIn: 'root' })
 export class DigitalTwinService {
@@ -33,6 +33,13 @@ export class DigitalTwinService {
       headers: { 'X-Organization-Id': organizationId },
       responseType: 'arraybuffer',
     });
+  }
+
+  getMaintenanceMarkers(organizationId: string, assetId: string): Observable<MaintenanceMarkerDto[]> {
+    return this.http.get<MaintenanceMarkerDto[]>(
+      `${this.baseUrl}/assets/${assetId}/maintenance-markers/`,
+      { headers: { 'X-Organization-Id': organizationId } },
+    );
   }
 
   uploadModel(

@@ -24,6 +24,14 @@ export interface ViewerPayloadDto {
   forecast_by_component: ComponentForecastDto[];
 }
 
+export interface MaintenanceMarkerDto {
+  component_id: string;
+  component_type: string;
+  scheduled_year: number;
+  intervention_name: string;
+  expected_state_after: string;
+}
+
 export interface DigitalTwinUploadResponseDto {
   id: string;
   asset_id: string;

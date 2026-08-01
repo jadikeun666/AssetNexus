@@ -11,14 +11,31 @@
     {{ isPlaying() ? 'Stop' : 'Play' }}
   </button>
   <span>{{ minYear() }}</span>
-  <input
-    type="range"
-    [min]="minYear()"
-    [max]="maxYear()"
-    [value]="activeYear()"
-    (input)="onScrubberInput($event)"
-    [disabled]="isPlaying()"
-  />
+  <div class="timeline-scrubber__track-wrapper">
+    <input
+      type="range"
+      [min]="minYear()"
+      [max]="maxYear()"
+      [value]="activeYear()"
+      (input)="onScrubberInput($event)"
+      [disabled]="isPlaying()"
+    />
+    <!-- visualization.md §4.2: wrench icon marker di scrubber pada tahun
+         intervensi terjadwal (dari approved MaintenancePlan terbaru). -->
+    @for (marker of maintenanceMarkers(); track marker.component_id + '-' + marker.scheduled_year) {
+      @if (maxYear() > minYear()) {
+        <span
+          class="timeline-scrubber__wrench"
+          [style.left.%]="((marker.scheduled_year - minYear()) / (maxYear() - minYear())) * 100"
+          [title]="marker.intervention_name + ' (' + marker.scheduled_year + ')'"
+        >
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="white">
+            <path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6l-3 3-4.3-4.3C.6 7.1 1 10.1 3 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1 0-1.4z"/>
+          </svg>
+        </span>
+      }
+    }
+  </div>
   <span>{{ maxYear() }}</span>
   <span class="timeline-scrubber__active-year">{{ activeYear() }}</span>
 </div>

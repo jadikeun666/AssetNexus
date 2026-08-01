@@ -10,4 +10,4 @@ dramatiq config.dramatiq_setup apps.deterioration.jobs apps.exports.jobs apps.ma
 
 
 3:
-pytest apps/core apps/assets apps/inspections apps/deterioration apps/exports apps/maintenance -q
+
