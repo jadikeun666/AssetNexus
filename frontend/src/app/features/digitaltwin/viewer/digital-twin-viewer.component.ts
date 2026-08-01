@@ -21,16 +21,19 @@ import {
   conditionScoreToColor,
   easeConditionScore,
   isCriticalState,
+  lerpColor,
   pulseEmissiveIntensity,
   rgbToHex,
+  SNAP_TO_GREEN_COLOR,
 } from './timeline-math';
 import { DIGITAL_TWIN } from './digital-twin.constants';
+import { MaintenanceMarkerDto } from '../../../core/models/digital-twin.model';
 
 // visualization.md §1: "renders in a fixed neutral gray" untuk node
 // tanpa match component -- kode hex TIDAK dispesifikasikan dokumen,
 // #9E9E9E (Material Design grey 500) dipilih sebagai asumsi eksplisit
 // yang didokumentasikan, bukan ditebak diam-diam.
-const NEUTRAL_GRAY_HEX = '#9e9e9e';
+const NEUTRAL_GRAY_RGB = { r: 0x9e, g: 0x9e, b: 0x9e };
 
 /**
  * visualization.md §2: viewer stack Three.js -- WebGLRenderer + GLTFLoader
@@ -88,6 +91,7 @@ export class DigitalTwinViewerComponent implements AfterViewInit, OnDestroy {
   private resizeObserver?: ResizeObserver;
 
   private forecastByComponent: ComponentForecastDto[] = [];
+  readonly maintenanceMarkers = signal<MaintenanceMarkerDto[]>([]);
 
   // visualization.md §4: rentang tahun timeline scrubber DIHITUNG dari
   // data forecast yang tersedia -- TIMELINE_DEFAULT_HORIZON_YEARS
@@ -191,6 +195,7 @@ export class DigitalTwinViewerComponent implements AfterViewInit, OnDestroy {
         next: (payload) => {
           this.forecastByComponent = payload.forecast_by_component;
           this.computeYearRange();
+          this.fetchMaintenanceMarkers();
           if (payload.digital_twin_model) {
             this.loadGltfModel(payload.digital_twin_model.id);
           } else {
@@ -204,6 +209,20 @@ export class DigitalTwinViewerComponent implements AfterViewInit, OnDestroy {
           this.addPlaceholderBox();
           this.render();
         },
+      });
+  }
+
+  private fetchMaintenanceMarkers(): void {
+    this.digitalTwinService
+      .getMaintenanceMarkers(this.organizationId(), this.assetId())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (markers) => this.maintenanceMarkers.set(markers),
+        // Graceful degradation: kalau fetch marker gagal, viewer tetap
+        // berfungsi penuh TANPA wrench marker/snap-to-green -- bukan
+        // fitur inti (forecast heatmap tetap jalan), jadi kegagalan di
+        // sini tidak boleh menghalangi apa pun yang sudah bekerja.
+        error: () => this.maintenanceMarkers.set([]),
       });
   }
 
@@ -297,7 +316,7 @@ export class DigitalTwinViewerComponent implements AfterViewInit, OnDestroy {
       const score = forecastEntry?.year_scores[String(year)];
 
       if (score === undefined) {
-        material.color.set(NEUTRAL_GRAY_HEX);
+        material.color.set(rgbToHex(NEUTRAL_GRAY_RGB));
         return;
       }
       material.color.set(rgbToHex(conditionScoreToColor(score)));
@@ -375,12 +394,32 @@ export class DigitalTwinViewerComponent implements AfterViewInit, OnDestroy {
     const fromScores = this.snapshotScores(fromYear);
     const toScores = this.snapshotScores(toYear);
 
+    // visualization.md §4.2: component_type yang punya intervensi
+    // terjadwal PERSIS di toYear -- transisinya SNAP-TO-GREEN 150ms
+    // non-eased, BUKAN eased 800ms biasa seperti component_type lain.
+    const snappingComponentTypes = new Set(
+      this.maintenanceMarkers()
+        .filter((marker) => marker.scheduled_year === toYear)
+        .map((marker) => marker.component_type),
+    );
+    const snapStartColors = new Map<string, ReturnType<typeof conditionScoreToColor>>();
+    for (const componentType of snappingComponentTypes) {
+      const startScore = fromScores.get(componentType);
+      snapStartColors.set(
+        componentType,
+        startScore !== undefined ? conditionScoreToColor(startScore) : NEUTRAL_GRAY_RGB,
+      );
+    }
+
     const stepEasing = (now: number) => {
       if (!this.isPlaying()) return;
 
       const elapsed = now - startTime;
       const t = Math.min(1, elapsed / PLAY_MS_PER_YEAR);
-      this.applyEasedHeatmapColors(fromScores, toScores, t);
+      const snapT = Math.min(1, elapsed / DIGITAL_TWIN.INTERVENTION_SNAP_MS);
+      this.applyEasedHeatmapColors(
+        fromScores, toScores, t, snappingComponentTypes, snapStartColors, snapT,
+      );
       this.render();
 
       if (t < 1) {
@@ -408,6 +447,9 @@ export class DigitalTwinViewerComponent implements AfterViewInit, OnDestroy {
     fromScores: Map<string, number | undefined>,
     toScores: Map<string, number | undefined>,
     t: number,
+    snappingComponentTypes: Set<string>,
+    snapStartColors: Map<string, ReturnType<typeof conditionScoreToColor>>,
+    snapT: number,
   ): void {
     if (!this.scene) return;
 
@@ -416,11 +458,22 @@ export class DigitalTwinViewerComponent implements AfterViewInit, OnDestroy {
       const material = object.material;
       if (!(material instanceof THREE.MeshStandardMaterial)) return;
 
+      // visualization.md §4.2: component dengan intervensi terjadwal di
+      // toYear ini -- SNAP 150ms non-eased ke hijau literal, BUKAN eased
+      // 800ms mengikuti skor forecast biasa. Begitu snapT mencapai 1
+      // (150ms berlalu), warna TETAP hijau solid sampai akhir window
+      // 800ms (representasi visual "intervensi sudah terjadi").
+      if (snappingComponentTypes.has(object.name)) {
+        const startColor = snapStartColors.get(object.name) ?? NEUTRAL_GRAY_RGB;
+        material.color.set(rgbToHex(lerpColor(startColor, SNAP_TO_GREEN_COLOR, snapT)));
+        return;
+      }
+
       const fromScore = fromScores.get(object.name);
       const toScore = toScores.get(object.name);
 
       if (fromScore === undefined || toScore === undefined) {
-        material.color.set(NEUTRAL_GRAY_HEX);
+        material.color.set(rgbToHex(NEUTRAL_GRAY_RGB));
         return;
       }
 

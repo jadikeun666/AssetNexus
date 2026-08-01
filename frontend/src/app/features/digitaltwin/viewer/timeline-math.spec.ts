@@ -3,6 +3,7 @@ import {
   conditionScoreToColor,
   easeConditionScore,
   isCriticalState,
+  lerpColor,
   pulseEmissiveIntensity,
   rgbToHex,
 } from './timeline-math';
@@ -61,6 +62,33 @@ describe('conditionScoreToColor', () => {
     // gagal saat draf pertama, dikoreksi di sini).
     expect(conditionScoreToColor(90)).toEqual({ r: 0x2e, g: 0x7d, b: 0x32 });
     expect(conditionScoreToColor(50)).toEqual({ r: 0xf9, g: 0xa8, b: 0x25 });
+  });
+});
+
+describe('lerpColor', () => {
+  it('t=0 mengembalikan warna from persis (hitungan tangan)', () => {
+    expect(lerpColor({ r: 0, g: 0, b: 0 }, { r: 0x2e, g: 0x7d, b: 0x32 }, 0)).toEqual({
+      r: 0, g: 0, b: 0,
+    });
+  });
+
+  it('t=1 mengembalikan warna to persis (hitungan tangan)', () => {
+    expect(lerpColor({ r: 0, g: 0, b: 0 }, { r: 0x2e, g: 0x7d, b: 0x32 }, 1)).toEqual({
+      r: 0x2e, g: 0x7d, b: 0x32,
+    });
+  });
+
+  it('t=0.5 mengembalikan titik tengah persis (hitungan tangan: 100 + (200-100)*0.5 = 150)', () => {
+    expect(lerpColor({ r: 100, g: 100, b: 100 }, { r: 200, g: 200, b: 200 }, 0.5)).toEqual({
+      r: 150, g: 150, b: 150,
+    });
+  });
+
+  it('clamp t di luar [0,1]', () => {
+    const from = { r: 0, g: 0, b: 0 };
+    const to = { r: 100, g: 100, b: 100 };
+    expect(lerpColor(from, to, 1.5)).toEqual(to);
+    expect(lerpColor(from, to, -0.5)).toEqual(from);
   });
 });
 

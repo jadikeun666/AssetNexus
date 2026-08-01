@@ -16,4 +16,9 @@ export const DIGITAL_TWIN = {
   CS5_PULSE_PERIOD_MS: 2000,
   CS5_PULSE_EMISSIVE_MIN: 0.1,
   CS5_PULSE_EMISSIVE_MAX: 0.4,
+  // visualization.md §4.2: transisi snap-to-green, SENGAJA TIDAK di-eased
+  // (150ms cepat, bukan 800ms seperti transisi tahun biasa) -- sudah ada
+  // di config/assetnexus.py DIGITAL_TWIN.INTERVENTION_SNAP_MS sejak awal
+  // sesi Fase 3, baru dipakai sekarang di langkah 4e-5.
+  INTERVENTION_SNAP_MS: 150,
 } as const;
