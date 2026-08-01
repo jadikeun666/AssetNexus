@@ -44,3 +44,20 @@ class ViewerPayloadOut(Schema):
     asset_id: uuid.UUID
     digital_twin_model: Optional[DigitalTwinModelOut] = None
     forecast_by_component: list[ComponentForecastOut]
+
+
+class MaintenanceMarkerOut(Schema):
+    """
+    visualization.md §4.2: wrench marker + snap-to-green data. Endpoint
+    terpisah (bukan digabung ke ViewerPayloadOut) -- payload viewer utama
+    di-cache sekali per asset (§4.1) dan tidak bergantung status
+    approval MaintenancePlan, sedangkan marker BISA berubah kalau plan
+    baru disetujui tanpa forecast deterioration berubah sama sekali;
+    memisah endpoint menghindari over-fetching/cache invalidation yang
+    tidak perlu untuk kasus umum "belum ada plan approved".
+    """
+    component_id: uuid.UUID
+    component_type: str
+    scheduled_year: int
+    intervention_name: str
+    expected_state_after: str

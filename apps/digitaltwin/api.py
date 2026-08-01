@@ -17,14 +17,16 @@ from apps.core.storage import download_bytes
 from apps.digitaltwin.models import DigitalTwinModel
 from apps.digitaltwin.services import DigitalTwinUploadService
 from apps.digitaltwin.services_validation import InvalidGltfError, TriangleCountExceededError
+from apps.digitaltwin.services_maintenance_markers import MaintenanceMarkerService
 from apps.digitaltwin.services_viewer import DigitalTwinViewerPayloadService
 
-from .schemas import DigitalTwinUploadOut, ViewerPayloadOut
+from .schemas import DigitalTwinUploadOut, MaintenanceMarkerOut, ViewerPayloadOut
 
 router = Router(tags=["digitaltwin"])
 
 upload_service = DigitalTwinUploadService()
 viewer_service = DigitalTwinViewerPayloadService()
+marker_service = MaintenanceMarkerService()
 
 
 @router.post("/assets/{asset_id}/upload/", response=DigitalTwinUploadOut)
@@ -74,6 +76,15 @@ def get_viewer_payload(request, asset_id: UUID):
     timeline scrubber -- di-cache client-side, bukan query per-tahun."""
     org_id = _current_org_stub(request)
     return viewer_service.get_viewer_payload(org_id, asset_id)
+
+
+@router.get("/assets/{asset_id}/maintenance-markers/", response=list[MaintenanceMarkerOut])
+def get_maintenance_markers(request, asset_id: UUID):
+    """visualization.md §4.2: wrench marker dari approved MaintenancePlan
+    terbaru yang mencakup asset ini -- lihat services_maintenance_markers.py
+    untuk rasionalisasi lengkap pemilihan "plan terbaru"."""
+    org_id = _current_org_stub(request)
+    return marker_service.get_markers(org_id, asset_id)
 
 @router.get("/models/{model_id}/download/")
 def download_digital_twin_model(request, model_id: UUID):
