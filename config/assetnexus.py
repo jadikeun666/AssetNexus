@@ -98,3 +98,7 @@ DIGITAL_TWIN = {
     # satu-satunya "flair" animasi selain easing timeline (§7: hanya 2
     # requestAnimationFrame loop kontinu di seluruh viewer).
 }
+
+SENSORS = {
+    "MAX_READINGS_PER_INGEST_REQUEST": 5000,
+}
