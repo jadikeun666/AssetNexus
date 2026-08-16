@@ -13,6 +13,7 @@ INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.staticfiles",
+    "channels",
     "ninja",
     "apps.core",
     "apps.assets",
@@ -21,6 +22,7 @@ INSTALLED_APPS = [
     "apps.exports",
     "apps.maintenance",
     "apps.digitaltwin",
+    "apps.sensors",
 ]
 
 MIDDLEWARE = [
