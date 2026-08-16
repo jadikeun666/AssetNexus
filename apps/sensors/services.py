@@ -4,6 +4,7 @@ SensorDevice -- registrasi & listing, mengikuti pola AssetComponentService
 (apps/assets/services.py) persis: org-scoping via for_organization(),
 FK parent (component) divalidasi org-scoped SEBELUM create.
 """
+from datetime import date
 from uuid import UUID
 
 from django.shortcuts import get_object_or_404
@@ -20,10 +21,13 @@ class SensorDeviceService:
             id=data["component_id"],
             deleted_at__isnull=True,
         )
+        install_date = data["install_date"]
+        if isinstance(install_date, str):
+            install_date = date.fromisoformat(install_date)
         return SensorDevice.objects.create(
             component=component,
             device_type=data["device_type"],
-            install_date=data["install_date"],
+            install_date=install_date,
             created_by=created_by,
         )
 

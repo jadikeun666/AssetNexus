@@ -31,6 +31,16 @@ class SensorDevice(BaseModel, SoftDeleteModel):
     install_date = models.DateField()
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.ACTIVE)
 
+    kalman_state = models.JSONField(
+        null=True, blank=True,
+        help_text=(
+            "State filter Kalman 1D local-level (estimate, variance, "
+            "measurement_noise, process_noise, n_updates) -- NULL berarti "
+            "belum pernah dijalankan Kalman detection untuk device ini. "
+            "Amandemen aditif database.md §3, langkah d Fase 4."
+        ),
+    )
+
     objects = OrganizationScopedManager(organization_lookup="component__asset__organization_id")
 
     class Meta:

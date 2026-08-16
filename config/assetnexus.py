@@ -74,6 +74,21 @@ CONDITION_AGGREGATION = {
     "CRITICAL_PENALTY_POINTS": 20,           # asset-registry.md §4
 }
 
+KALMAN = {
+    "PROCESS_TO_MEASUREMENT_NOISE_RATIO": 0.01,  # local-level Kalman
+    # filter, standar industri untuk sinyal fisik yang berubah lambat
+    # (Q = R * ratio) -- filter memercayai histori/tren lebih daripada
+    # lonjakan tunggal, tapi tetap adaptif. R diestimasi dari variance
+    # reading historis (baseline sama dengan threshold detection),
+    # BUKAN angka tebakan tetap per device_type.
+    "MIN_READINGS_BEFORE_ACTIVE": 30,  # jumlah update minimum sebelum
+    # residual dievaluasi sebagai anomali -- filter baru butuh beberapa
+    # iterasi untuk estimate/variance konvergen dari inisialisasi kasar.
+    "RESIDUAL_ZSCORE_THRESHOLD": 3.0,  # sama basis three-sigma dengan
+    # SENSORS.ANOMALY_ZSCORE_THRESHOLD -- residual/sqrt(variance) > ini
+    # dianggap anomali.
+}
+
 DIGITAL_TWIN = {
     "MAX_TRIANGLE_COUNT": 150_000,            # visualization.md §7: mesh di
     # atas ambang ini DITOLAK saat upload dengan error jelas, tidak
@@ -101,4 +116,20 @@ DIGITAL_TWIN = {
 
 SENSORS = {
     "MAX_READINGS_PER_INGEST_REQUEST": 5000,
+    "ANOMALY_ZSCORE_THRESHOLD": 3.0,      # three-sigma rule (Shewhart
+    # control chart, ISO 7870) -- standar Statistical Process Control,
+    # dipakai sebagai baseline umum di literatur SHM sebelum metode
+    # lanjutan (Bayesian/ML) diterapkan. |value - mean| > 3*std dianggap
+    # anomali statistik dari baseline device yang sama.
+    "ANOMALY_BASELINE_WINDOW_READINGS": 100,  # jumlah reading historis
+    # minimum untuk membentuk baseline (mean/std) stabil sebelum deteksi
+    # dijalankan. Di bawah ini, device dianggap "belum cukup data" --
+    # TIDAK dievaluasi (bukan default aman), menghindari false
+    # positive/negative dari baseline belum matang.
+    "ANOMALY_SEVERITY_ZSCORE_BANDS": {     # proporsional terhadap seberapa
+        # jauh deviasi melampaui threshold dasar (3-sigma), bukan biner.
+        "medium": 3.0,   # 3-5 sigma
+        "high": 5.0,     # 5-8 sigma
+        "critical": 8.0, # >8 sigma
+    },
 }

@@ -54,6 +54,24 @@ class TestSensorDeviceService:
                 },
             )
 
+    def test_create_device_accepts_iso_string_install_date(self):
+        # Regresi: schema Ninja SensorDeviceIn mengirim install_date
+        # sebagai str ISO ("2026-01-01"), bukan objek date -- ditemukan
+        # lewat verifikasi curl manual (AttributeError: 'str' object has
+        # no attribute 'isoformat' saat api.py memanggil
+        # device.install_date.isoformat()).
+        org, component = _make_component()
+        svc = SensorDeviceService()
+        device = svc.create(
+            organization_id=org.id, created_by=None,
+            data={
+                "component_id": component.id,
+                "device_type": SensorDevice.DeviceType.ACCELEROMETER,
+                "install_date": "2026-01-01",
+            },
+        )
+        assert device.install_date.isoformat() == "2026-01-01"
+
     def test_list_for_organization_excludes_other_orgs(self):
         org_a, component_a = _make_component(org_name="Org A")
         _, component_b = _make_component(org_name="Org B")
