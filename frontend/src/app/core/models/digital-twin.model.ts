@@ -38,3 +38,40 @@ export interface DigitalTwinUploadResponseDto {
   file_ref: string;
   version: number;
 }
+
+/**
+ * visualization.md §6: anomaly hotspot marker -- AnomalyEvent unresolved
+ * severity>=medium, dari GET /digitaltwin/assets/{asset_id}/anomaly-markers/
+ * (fetch awal) DAN dari WebSocket /ws/assets/{asset_id}/alerts (push
+ * real-time, langkah e Fase 4) -- payload WebSocket TIDAK persis sama
+ * shape-nya dengan endpoint REST (lihat AssetAlertsPayload di bawah),
+ * dinormalisasi ke AnomalyMarkerDto ini di viewer component sebelum
+ * dipakai, supaya satu tipe data internal konsisten dari kedua sumber.
+ */
+export interface AnomalyMarkerDto {
+  anomaly_id: string;
+  device_id: string;
+  component_id: string;
+  component_type: string;
+  detected_at: string;
+  detection_method: string;
+  severity: string;
+}
+
+/**
+ * architecture.md §5: payload persis yang dikirim
+ * apps/sensors/jobs.py push_anomaly_alert_job lewat Channels group_send
+ * -- TIDAK punya device_id/component_id terpisah sebagai field top-level
+ * beda urutan dari AnomalyMarkerDto (kebetulan sama isinya sekarang,
+ * tapi dideklarasikan sebagai tipe terpisah karena keduanya berasal dari
+ * KONTRAK berbeda -- REST response Ninja Schema vs WebSocket JSON manual
+ * -- yang bisa berevolusi independen).
+ */
+export interface AssetAlertsPayload {
+  anomaly_id: string;
+  device_id: string;
+  component_id: string;
+  detected_at: string;
+  detection_method: string;
+  severity: string;
+}

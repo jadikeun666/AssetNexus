@@ -3,7 +3,13 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { DigitalTwinUploadResponseDto, MaintenanceMarkerDto, ViewerPayloadDto } from '../models/digital-twin.model';
+import {
+  AnomalyMarkerDto,
+  AssetAlertsPayload,
+  DigitalTwinUploadResponseDto,
+  MaintenanceMarkerDto,
+  ViewerPayloadDto,
+} from '../models/digital-twin.model';
 
 @Injectable({ providedIn: 'root' })
 export class DigitalTwinService {
@@ -57,5 +63,60 @@ export class DigitalTwinService {
       formData,
       { headers: { 'X-Organization-Id': organizationId } },
     );
+  }
+
+  /**
+   * visualization.md §6: fetch awal anomaly hotspot marker (state saat
+   * viewer dibuka) -- WebSocket (connectAssetAlerts di bawah) menambah
+   * marker baru SETELAH ini secara real-time, tidak menggantikan fetch
+   * awal.
+   */
+  getAnomalyMarkers(organizationId: string, assetId: string): Observable<AnomalyMarkerDto[]> {
+    return this.http.get<AnomalyMarkerDto[]>(
+      `${this.baseUrl}/assets/${assetId}/anomaly-markers/`,
+      { headers: { 'X-Organization-Id': organizationId } },
+    );
+  }
+
+  /**
+   * architecture.md §5: /ws/assets/{asset_id}/alerts -- push real-time
+   * SensorAnomalyDetected. WebSocket native (bukan library RxJS
+   * WebSocketSubject) -- KASUS PERTAMA koneksi real-time di frontend,
+   * belum ada preseden pola di project ini; native API dipilih karena
+   * paling eksplisit/minim dependency untuk kasus tunggal ini (satu
+   * consumer, payload JSON sederhana, tidak butuh reconnect logic
+   * canggih untuk versi awal).
+   *
+   * BELUM ada X-Organization-Id/auth di level WebSocket (Keycloak realm
+   * belum ada, konsisten stub di seluruh REST API) -- lihat
+   * apps/sensors/consumers.py untuk keterbatasan yang sama persis di
+   * backend.
+   *
+   * Caller bertanggung jawab memanggil .close() pada WebSocket yang
+   * dikembalikan saat ngOnDestroy (pola sama seperti dispose() Three.js
+   * scene di viewer component -- lifecycle cleanup eksplisit, bukan
+   * bergantung garbage collection).
+   */
+  connectAssetAlerts(assetId: string): {
+    socket: WebSocket;
+    messages$: Observable<AssetAlertsPayload>;
+  } {
+    const wsProtocol = environment.apiBaseUrl.startsWith('https') ? 'wss' : 'ws';
+    const wsHost = environment.apiBaseUrl.replace(/^https?:\/\//, '').replace(/\/api$/, '');
+    const socket = new WebSocket(`${wsProtocol}://${wsHost}/ws/assets/${assetId}/alerts`);
+
+    const messages$ = new Observable<AssetAlertsPayload>((subscriber) => {
+      socket.onmessage = (event: MessageEvent<string>) => {
+        subscriber.next(JSON.parse(event.data) as AssetAlertsPayload);
+      };
+      socket.onerror = (event: Event) => {
+        subscriber.error(event);
+      };
+      socket.onclose = () => {
+        subscriber.complete();
+      };
+    });
+
+    return { socket, messages$ };
   }
 }
