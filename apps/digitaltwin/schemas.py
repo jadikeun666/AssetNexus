@@ -4,6 +4,7 @@ Ninja schemas untuk app digitaltwin. Payload viewer (visualization.md
 CRUD DigitalTwinModel.
 """
 import uuid
+from datetime import datetime
 from typing import Optional
 
 from ninja import Schema
@@ -61,3 +62,19 @@ class MaintenanceMarkerOut(Schema):
     scheduled_year: int
     intervention_name: str
     expected_state_after: str
+
+
+class AnomalyMarkerOut(Schema):
+    """
+    visualization.md §6: anomaly hotspot marker. Endpoint terpisah dari
+    ViewerPayloadOut (alasan sama dengan MaintenanceMarkerOut) --
+    anomali bisa muncul kapan saja secara real-time (WebSocket push,
+    langkah e Fase 4), tidak terikat siklus fetch payload viewer utama.
+    """
+    anomaly_id: uuid.UUID
+    device_id: uuid.UUID
+    component_id: uuid.UUID
+    component_type: str
+    detected_at: datetime
+    detection_method: str
+    severity: str

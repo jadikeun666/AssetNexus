@@ -16,17 +16,24 @@ from apps.assets.models import Asset
 from apps.core.storage import download_bytes
 from apps.digitaltwin.models import DigitalTwinModel
 from apps.digitaltwin.services import DigitalTwinUploadService
-from apps.digitaltwin.services_validation import InvalidGltfError, TriangleCountExceededError
+from apps.digitaltwin.services_anomaly_markers import AnomalyMarkerService
 from apps.digitaltwin.services_maintenance_markers import MaintenanceMarkerService
+from apps.digitaltwin.services_validation import InvalidGltfError, TriangleCountExceededError
 from apps.digitaltwin.services_viewer import DigitalTwinViewerPayloadService
 
-from .schemas import DigitalTwinUploadOut, MaintenanceMarkerOut, ViewerPayloadOut
+from .schemas import (
+    AnomalyMarkerOut,
+    DigitalTwinUploadOut,
+    MaintenanceMarkerOut,
+    ViewerPayloadOut,
+)
 
 router = Router(tags=["digitaltwin"])
 
 upload_service = DigitalTwinUploadService()
 viewer_service = DigitalTwinViewerPayloadService()
 marker_service = MaintenanceMarkerService()
+anomaly_marker_service = AnomalyMarkerService()
 
 
 @router.post("/assets/{asset_id}/upload/", response=DigitalTwinUploadOut)
@@ -85,6 +92,17 @@ def get_maintenance_markers(request, asset_id: UUID):
     untuk rasionalisasi lengkap pemilihan "plan terbaru"."""
     org_id = _current_org_stub(request)
     return marker_service.get_markers(org_id, asset_id)
+
+@router.get("/assets/{asset_id}/anomaly-markers/", response=list[AnomalyMarkerOut])
+def get_anomaly_markers(request, asset_id: UUID):
+    """visualization.md §6: anomaly hotspot marker (AnomalyEvent
+    unresolved, severity >= medium) untuk pulsing marker THREE.Sprite
+    di viewer -- endpoint terpisah dari viewer-payload/maintenance-
+    markers, lihat services_anomaly_markers.py untuk rasionalisasi
+    lengkap."""
+    org_id = _current_org_stub(request)
+    return anomaly_marker_service.get_markers(org_id, asset_id)
+
 
 @router.get("/models/{model_id}/download/")
 def download_digital_twin_model(request, model_id: UUID):
