@@ -27,7 +27,16 @@ import {
   SNAP_TO_GREEN_COLOR,
 } from './timeline-math';
 import { DIGITAL_TWIN } from './digital-twin.constants';
-import { MaintenanceMarkerDto } from '../../../core/models/digital-twin.model';
+import {
+  AnomalyMarkerDto,
+  AssetAlertsPayload,
+  MaintenanceMarkerDto,
+} from '../../../core/models/digital-twin.model';
+import {
+  groupMarkersIntoHotspots,
+  mergeAnomalyMarker,
+  severityToColor,
+} from './anomaly-marker-math';
 
 // visualization.md §1: "renders in a fixed neutral gray" untuk node
 // tanpa match component -- kode hex TIDAK dispesifikasikan dokumen,
@@ -92,6 +101,11 @@ export class DigitalTwinViewerComponent implements AfterViewInit, OnDestroy {
 
   private forecastByComponent: ComponentForecastDto[] = [];
   readonly maintenanceMarkers = signal<MaintenanceMarkerDto[]>([]);
+  // visualization.md §6: anomaly hotspot marker -- fetch awal (REST) +
+  // push real-time (WebSocket, langkah e Fase 4).
+  readonly anomalyMarkers = signal<AnomalyMarkerDto[]>([]);
+  private anomalyAlertsSocket?: WebSocket;
+  private readonly anomalySprites = new Map<string, THREE.Sprite>();
 
   // visualization.md §4: rentang tahun timeline scrubber DIHITUNG dari
   // data forecast yang tersedia -- TIMELINE_DEFAULT_HORIZON_YEARS
@@ -127,6 +141,7 @@ export class DigitalTwinViewerComponent implements AfterViewInit, OnDestroy {
 
     this.pulseStartTime = performance.now();
     this.runPulseLoop();
+    this.connectAnomalyAlerts();
   }
 
   ngOnDestroy(): void {
@@ -139,6 +154,8 @@ export class DigitalTwinViewerComponent implements AfterViewInit, OnDestroy {
     }
     this.controls?.dispose();
     this.renderer?.dispose();
+    this.anomalyAlertsSocket?.close();
+    this.disposeAnomalySprites();
     window.removeEventListener('keydown', this.handleKeyDown);
     window.removeEventListener('keyup', this.handleKeyUp);
   }
@@ -196,6 +213,7 @@ export class DigitalTwinViewerComponent implements AfterViewInit, OnDestroy {
           this.forecastByComponent = payload.forecast_by_component;
           this.computeYearRange();
           this.fetchMaintenanceMarkers();
+          this.fetchAnomalyMarkers();
           if (payload.digital_twin_model) {
             this.loadGltfModel(payload.digital_twin_model.id);
           } else {
@@ -224,6 +242,110 @@ export class DigitalTwinViewerComponent implements AfterViewInit, OnDestroy {
         // sini tidak boleh menghalangi apa pun yang sudah bekerja.
         error: () => this.maintenanceMarkers.set([]),
       });
+  }
+
+  /**
+   * visualization.md §6: fetch awal anomaly hotspot marker. Graceful
+   * degradation sama seperti fetchMaintenanceMarkers() -- kegagalan di
+   * sini tidak boleh menghalangi viewer/heatmap yang sudah berfungsi.
+   */
+  private fetchAnomalyMarkers(): void {
+    this.digitalTwinService
+      .getAnomalyMarkers(this.organizationId(), this.assetId())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (markers) => {
+          this.anomalyMarkers.set(markers);
+          this.renderAnomalyMarkers();
+        },
+        error: () => this.anomalyMarkers.set([]),
+      });
+  }
+
+  /**
+   * architecture.md §5: subscribe /ws/assets/{asset_id}/alerts. Payload
+   * WebSocket TIDAK punya component_type (AssetAlertsPayload) --
+   * componentTypeLookup join manual by component_id ke
+   * forecastByComponent yang sudah di-fetch viewer-payload.
+   */
+  private connectAnomalyAlerts(): void {
+    const { socket, messages$ } = this.digitalTwinService.connectAssetAlerts(this.assetId());
+    this.anomalyAlertsSocket = socket;
+
+    messages$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (payload: AssetAlertsPayload) => {
+        const lookup = (componentId: string) =>
+          this.forecastByComponent.find((entry) => entry.component_id === componentId)
+            ?.component_type;
+        const merged = mergeAnomalyMarker(this.anomalyMarkers(), payload, lookup);
+        if (merged !== this.anomalyMarkers()) {
+          this.anomalyMarkers.set(merged);
+          this.renderAnomalyMarkers();
+        }
+      },
+      // WebSocket gagal/putus: viewer tetap berfungsi dengan marker yang
+      // sudah ter-fetch REST, hanya kehilangan update real-time -- bukan
+      // fitur inti, tidak boleh melempar error yang menghentikan viewer.
+      error: () => {
+        /* graceful degradation, lihat komentar di atas */
+      },
+    });
+  }
+
+  /**
+   * visualization.md §6: SATU THREE.Sprite pulsing warning icon per
+   * component_type (groupMarkersIntoHotspots -- bukan per event),
+   * diposisikan di world-position bounding-box CENTER sub-mesh yang
+   * object.name === componentType (join key sama persis applyHeatmapColors).
+   * Re-render penuh (hapus semua sprite lama, buat ulang) tiap kali
+   * dipanggil -- sederhana dan cukup untuk jumlah marker yang wajar
+   * kecil, bukan diff-based reconciliation.
+   */
+  private renderAnomalyMarkers(): void {
+    if (!this.scene) return;
+
+    this.disposeAnomalySprites();
+
+    const hotspots = groupMarkersIntoHotspots(this.anomalyMarkers());
+    for (const hotspot of hotspots) {
+      let targetMesh: THREE.Object3D | undefined;
+      this.scene.traverse((object) => {
+        if (object.name === hotspot.componentType && object instanceof THREE.Mesh) {
+          targetMesh = object;
+        }
+      });
+      if (!targetMesh) continue; // node tidak ditemukan di mesh -- skip diam-diam
+
+      const box = new THREE.Box3().setFromObject(targetMesh);
+      const center = new THREE.Vector3();
+      box.getCenter(center);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+
+      const spriteMaterial = new THREE.SpriteMaterial({
+        color: severityToColor(hotspot.worstSeverity),
+        transparent: true,
+        depthTest: false, // marker selalu terlihat di atas geometry
+      });
+      const sprite = new THREE.Sprite(spriteMaterial);
+      sprite.position.set(center.x, box.max.y + size.y * 0.15, center.z);
+      const spriteScale = Math.max(0.15, Math.min(size.x, size.y, size.z) * 0.3);
+      sprite.scale.set(spriteScale, spriteScale, 1);
+      sprite.name = `anomaly-marker-${hotspot.componentType}`;
+
+      this.scene.add(sprite);
+      this.anomalySprites.set(hotspot.componentType, sprite);
+    }
+
+    this.render();
+  }
+
+  private disposeAnomalySprites(): void {
+    for (const sprite of this.anomalySprites.values()) {
+      this.scene?.remove(sprite);
+      sprite.material.dispose();
+    }
+    this.anomalySprites.clear();
   }
 
   private loadGltfModel(modelId: string): void {
