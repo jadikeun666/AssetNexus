@@ -34,8 +34,14 @@ class CoreConfig(AppConfig):
         berbahaya dijalankan dua kali).
         """
         import dramatiq
-        from dramatiq.brokers.redis import RedisBroker
         from django.conf import settings
+        from django.utils.module_loading import import_string
 
-        redis_broker = RedisBroker(url=settings.DRAMATIQ_BROKER["OPTIONS"]["url"])
-        dramatiq.set_broker(redis_broker)
+        # Kelas broker dibaca dari settings.DRAMATIQ_BROKER["BROKER"] (sebelumnya
+        # kunci ini diabaikan dan RedisBroker di-hardcode) supaya config/settings/
+        # test.py bisa memakai StubBroker: test TIDAK boleh mengirim pesan ke Redis
+        # dev -- pesan itu diambil worker dev dan gagal DoesNotExist karena ID-nya
+        # milik database test. Dev/prod tetap RedisBroker, perilaku tidak berubah.
+        broker_cfg = settings.DRAMATIQ_BROKER
+        broker_class = import_string(broker_cfg["BROKER"])
+        dramatiq.set_broker(broker_class(**broker_cfg.get("OPTIONS", {})))
