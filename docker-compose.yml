@@ -20,7 +20,7 @@ services:
     command: "server -dir=/data -s3 -s3.port=8333 -master.port=9333 -volume.port=8080"
     ports:
       - "9333:9333"   # master UI/API
-      - "8080:8080"   # volume server
+      - "8082:8080"   # volume server (host 8082: 8080 dipakai project monitor_web)
       - "8333:8333"   # S3-compatible gateway (database.md §3: `weed s3`)
     volumes:
       - assetnexus_seaweedfs:/data
