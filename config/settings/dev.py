@@ -6,7 +6,7 @@ DEBUG = True
 # Rasionalisasi: di produksi (architecture.md §7), Nginx reverse-proxy
 # Django DAN aset statis Angular dari satu origin -- CORS tidak relevan
 # sama sekali di sana. Kebutuhan CORS murni artefak `ng serve` (:4200)
-# vs `runserver` (:8000) dev lokal yang beda origin.
+# vs `runserver` (:8003) dev lokal yang beda origin.
 INSTALLED_APPS += ["corsheaders"]  # noqa: F405
 
 # CorsMiddleware ditaruh SETINGGI MUNGKIN di MIDDLEWARE (rekomendasi resmi
