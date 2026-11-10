@@ -624,7 +624,8 @@ export class DigitalTwinViewerComponent implements AfterViewInit, OnDestroy {
    */
   private runPulseLoop = (): void => {
     const hadCritical = this.applyPulseToCriticalComponents();
-    if (hadCritical) {
+    const hadAnomalySprites = this.applyPulseToAnomalySprites();
+    if (hadCritical || hadAnomalySprites) {
       this.render();
     }
     this.pulseAnimationFrameId = requestAnimationFrame(this.runPulseLoop);
@@ -666,6 +667,35 @@ export class DigitalTwinViewerComponent implements AfterViewInit, OnDestroy {
     });
 
     return hadCritical;
+  }
+
+  /**
+   * visualization.md §6: "pulsing marker" -- opacity Sprite berosilasi
+   * (bukan scale, lihat digital-twin.constants.ts untuk rasionalisasi
+   * lengkap). Numpang di loop rAF pulse CS5 yang sudah ada (bukan loop
+   * ketiga) -- visualization.md §7 membatasi HANYA 2 loop rAF kontinu.
+   * Return true kalau ada minimal 1 sprite (supaya runPulseLoop tahu
+   * perlu render() atau tidak -- render-on-demand, bukan render buta).
+   */
+  private applyPulseToAnomalySprites(): boolean {
+    if (this.anomalySprites.size === 0) return false;
+
+    const elapsedMs = performance.now() - this.pulseStartTime;
+    const opacity = pulseEmissiveIntensity(
+      elapsedMs,
+      DIGITAL_TWIN.CS5_PULSE_PERIOD_MS,
+      DIGITAL_TWIN.ANOMALY_MARKER_OPACITY_MIN,
+      DIGITAL_TWIN.ANOMALY_MARKER_OPACITY_MAX,
+    );
+
+    for (const sprite of this.anomalySprites.values()) {
+      const material = sprite.material;
+      if (material instanceof THREE.SpriteMaterial) {
+        material.opacity = opacity;
+      }
+    }
+
+    return true;
   }
 
   /** Modifier-key precision mode: Shift ditahan = damping mati (instan). */
