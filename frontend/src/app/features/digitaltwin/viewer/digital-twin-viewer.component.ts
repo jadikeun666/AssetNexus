@@ -37,6 +37,7 @@ import {
   mergeAnomalyMarker,
   severityToColor,
 } from './anomaly-marker-math';
+import { createWarningTriangleTexture } from './anomaly-marker-texture';
 
 // visualization.md §1: "renders in a fixed neutral gray" untuk node
 // tanpa match component -- kode hex TIDAK dispesifikasikan dokumen,
@@ -106,6 +107,10 @@ export class DigitalTwinViewerComponent implements AfterViewInit, OnDestroy {
   readonly anomalyMarkers = signal<AnomalyMarkerDto[]>([]);
   private anomalyAlertsSocket?: WebSocket;
   private readonly anomalySprites = new Map<string, THREE.Sprite>();
+  /** Satu tekstur ikon bersama untuk semua sprite. undefined = belum dibuat,
+   *  null = canvas 2D tidak tersedia (fallback ke kotak berwarna). Dibuang
+   *  SEKALI di ngOnDestroy -- material.dispose() tidak membuang map. */
+  private anomalyIconTexture: THREE.CanvasTexture | null | undefined;
 
   // visualization.md §4: rentang tahun timeline scrubber DIHITUNG dari
   // data forecast yang tersedia -- TIMELINE_DEFAULT_HORIZON_YEARS
@@ -156,6 +161,7 @@ export class DigitalTwinViewerComponent implements AfterViewInit, OnDestroy {
     this.renderer?.dispose();
     this.anomalyAlertsSocket?.close();
     this.disposeAnomalySprites();
+    this.anomalyIconTexture?.dispose();
     window.removeEventListener('keydown', this.handleKeyDown);
     window.removeEventListener('keyup', this.handleKeyUp);
   }
@@ -324,7 +330,11 @@ export class DigitalTwinViewerComponent implements AfterViewInit, OnDestroy {
       const size = new THREE.Vector3();
       box.getSize(size);
 
+      if (this.anomalyIconTexture === undefined) {
+        this.anomalyIconTexture = createWarningTriangleTexture();
+      }
       const spriteMaterial = new THREE.SpriteMaterial({
+        map: this.anomalyIconTexture ?? null,
         color: severityToColor(hotspot.worstSeverity),
         transparent: true,
         depthTest: false, // marker selalu terlihat di atas geometry
