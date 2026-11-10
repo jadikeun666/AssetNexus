@@ -16,3 +16,5 @@ Thumbs.db
 # Catatan pribadi
 penting.txt
 .env
+# Catatan pribadi perintah startup dev (bukan bagian repo)
+/p
