@@ -219,12 +219,14 @@ export class DigitalTwinViewerComponent implements AfterViewInit, OnDestroy {
           } else {
             this.addPlaceholderBox();
             this.applyHeatmapColors(this.activeYear());
+            this.renderAnomalyMarkers();
             this.render();
           }
         },
         error: () => {
           // Graceful degradation: tampilkan placeholder, bukan viewer kosong/error.
           this.addPlaceholderBox();
+          this.renderAnomalyMarkers();
           this.render();
         },
       });
@@ -361,12 +363,14 @@ export class DigitalTwinViewerComponent implements AfterViewInit, OnDestroy {
             (gltf) => {
               this.addModelToScene(gltf.scene);
               this.applyHeatmapColors(this.activeYear());
+              this.renderAnomalyMarkers();
               this.render();
             },
             (error) => {
               console.error('Gagal parse glTF, fallback ke placeholder', error);
               this.addPlaceholderBox();
               this.applyHeatmapColors(this.activeYear());
+              this.renderAnomalyMarkers();
               this.render();
             },
           );
@@ -375,6 +379,7 @@ export class DigitalTwinViewerComponent implements AfterViewInit, OnDestroy {
           console.error('Gagal download model glTF, fallback ke placeholder', error);
           this.addPlaceholderBox();
           this.applyHeatmapColors(this.activeYear());
+          this.renderAnomalyMarkers();
           this.render();
         },
       });
