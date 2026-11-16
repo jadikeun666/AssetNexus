@@ -112,6 +112,12 @@ DIGITAL_TWIN = {
     "CS5_PULSE_EMISSIVE_MAX": 0.4,             # emissive glow komponen CS5,
     # satu-satunya "flair" animasi selain easing timeline (§7: hanya 2
     # requestAnimationFrame loop kontinu di seluruh viewer).
+    "ANOMALY_MARKER_OPACITY_MIN": 0.4,         # visualization.md §6.1: pulse
+    "ANOMALY_MARKER_OPACITY_MAX": 1.0,         # opacity Sprite anomaly marker
+    # (gelombang segitiga, periode = CS5_PULSE_PERIOD_MS, tanpa loop rAF
+    # ketiga). BEDA dari rentang emissive CS5: marker anomaly harus
+    # selalu terlihat jelas. Duplikasi manual di
+    # digital-twin.constants.ts.
 }
 
 SENSORS = {

@@ -5,6 +5,12 @@
  * nilai ini HARUS diupdate manual di sini juga (didokumentasikan sebagai
  * risiko drift yang disengaja, bukan disembunyikan).
  *
+ * Semua kunci di objek DIGITAL_TWIN di bawah ini punya padanan bernama
+ * sama di config/assetnexus.py DIGITAL_TWIN, termasuk
+ * ANOMALY_MARKER_OPACITY_MIN/MAX (ditambahkan di sisi Python pada Fase 4
+ * langkah f-2; sebelumnya hanya ada di file ini). Perubahan nilai harus
+ * dilakukan di KEDUA tempat.
+ *
  * CS5_PULSE_PERIOD_MS: visualization.md §3 cuma menspesifikasikan RENTANG
  * intensitas (0.1<->0.4), TIDAK menspesifikasikan periode/kecepatan
  * osilasi -- 2000ms (2 detik per siklus penuh) dipilih dan disepakati
