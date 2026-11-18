@@ -122,6 +122,9 @@ DIGITAL_TWIN = {
 
 SENSORS = {
     "MAX_READINGS_PER_INGEST_REQUEST": 5000,
+    "MAX_TRACE_POINTS": 5000,                 # visualization.md §6: batas titik
+    # per respons sensor trace; lebih dari ini -> terpotong + truncated=true.
+    "MAX_TRACE_WINDOW_HOURS": 24,             # batas lebar jendela trace.
     "ANOMALY_ZSCORE_THRESHOLD": 3.0,      # three-sigma rule (Shewhart
     # control chart, ISO 7870) -- standar Statistical Process Control,
     # dipakai sebagai baseline umum di literatur SHM sebelum metode

@@ -46,3 +46,18 @@ class AnomalyEventOut(Schema):
     detection_method: str
     severity: str
     resolved: bool
+
+
+class SensorReadingOut(Schema):
+    timestamp: datetime
+    value: float
+    unit: str
+    quality_flag: str
+
+
+class SensorTraceOut(Schema):
+    device_id: UUID
+    start: datetime
+    end: datetime
+    truncated: bool
+    readings: list[SensorReadingOut]

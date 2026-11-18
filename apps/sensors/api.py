@@ -3,6 +3,7 @@ architecture.md §3: router tipis -- satu call service per endpoint.
 Endpoint pertama app sensors (Fase 4, prd.md §8): registrasi device
 (asset-registry.md §6) dan ingestion batch SensorReading (database.md §3).
 """
+from datetime import datetime
 from uuid import UUID
 
 from ninja import Router
@@ -17,10 +18,12 @@ from .schemas import (
     SensorDeviceIn,
     SensorDeviceOut,
     SensorReadingBatchIn,
+    SensorTraceOut,
 )
 from .services import AnomalyEventService, SensorDeviceService
 from .services_anomaly_detection import ThresholdAnomalyDetectionService
 from .services_ingestion import SensorReadingIngestService
+from .services_readings import InvalidTraceWindowError, SensorReadingQueryService
 from .services_kalman_detection import KalmanAnomalyDetectionService
 
 router = Router(tags=["sensors"])
@@ -28,6 +31,7 @@ router = Router(tags=["sensors"])
 device_service = SensorDeviceService()
 anomaly_service = AnomalyEventService()
 ingest_service = SensorReadingIngestService()
+reading_query_service = SensorReadingQueryService()
 threshold_detection_service = ThresholdAnomalyDetectionService()
 kalman_detection_service = KalmanAnomalyDetectionService()
 
@@ -125,3 +129,17 @@ def list_anomalies(request, device_id: UUID):
         }
         for e in events
     ]
+
+
+@router.get("/devices/{device_id}/readings/", response=SensorTraceOut)
+def read_trace(request, device_id: UUID, start: datetime, end: datetime):
+    """visualization.md §6: sensor trace untuk panel anomaly marker.
+    Jendela inklusif [start, end] dengan zona waktu eksplisit."""
+    org_id = _current_org_stub(request)
+    device = device_service.get(org_id, device_id)
+    try:
+        return reading_query_service.read_window(
+            device_id=device.id, start=start, end=end
+        )
+    except InvalidTraceWindowError as exc:
+        raise HttpError(400, str(exc))
