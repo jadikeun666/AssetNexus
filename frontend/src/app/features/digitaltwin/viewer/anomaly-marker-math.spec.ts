@@ -4,6 +4,8 @@ import {
   mergeAnomalyMarker,
   severityToColor,
   traceWindowAround,
+  severityLabel,
+  detectionMethodLabel,
 } from './anomaly-marker-math';
 import { AnomalyMarkerDto, AssetAlertsPayload } from '../../../core/models/digital-twin.model';
 
@@ -130,5 +132,30 @@ describe('traceWindowAround', () => {
   it('lebar total jendela tepat 2 jam', () => {
     const w = traceWindowAround('2026-09-11T06:16:52Z');
     expect(new Date(w.end).getTime() - new Date(w.start).getTime()).toBe(7_200_000);
+  });
+});
+
+describe('severityLabel', () => {
+  it('memetakan keempat severity ke label Indonesia', () => {
+    expect(severityLabel('low')).toBe('Rendah');
+    expect(severityLabel('medium')).toBe('Sedang');
+    expect(severityLabel('high')).toBe('Tinggi');
+    expect(severityLabel('critical')).toBe('Kritis');
+  });
+
+  it('mengembalikan nilai asli untuk severity tak dikenal', () => {
+    expect(severityLabel('mystery')).toBe('mystery');
+  });
+});
+
+describe('detectionMethodLabel', () => {
+  it('memetakan metode deteksi yang dikenal', () => {
+    expect(detectionMethodLabel('threshold')).toBe('Ambang statistik');
+    expect(detectionMethodLabel('kalman_residual')).toBe('Residual Kalman');
+    expect(detectionMethodLabel('pinn_residual')).toBe('Residual PINN');
+  });
+
+  it('mengembalikan nilai asli untuk metode tak dikenal', () => {
+    expect(detectionMethodLabel('x')).toBe('x');
   });
 });

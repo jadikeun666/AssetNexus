@@ -1,0 +1,85 @@
+<aside
+  class="anomaly-panel"
+  [attr.aria-label]="'Detail anomali komponen ' + componentType()"
+  (keydown.escape)="closed.emit()"
+>
+  <header class="anomaly-panel__header" [style.border-left-color]="accentColor()">
+    <div>
+      <h3 class="anomaly-panel__title" #heading tabindex="-1">Anomali: {{ componentType() }}</h3>
+      <p class="anomaly-panel__severity">
+        Severitas terburuk: <strong>{{ severityLabel(worstSeverity()) }}</strong>
+      </p>
+    </div>
+    <button type="button" class="anomaly-panel__close" aria-label="Tutup panel anomali" (click)="closed.emit()">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none" />
+      </svg>
+    </button>
+  </header>
+
+  <section class="anomaly-panel__section" aria-label="Daftar kejadian anomali">
+    @switch (eventsStatus()) {
+      @case ('loading') {
+        <p class="anomaly-panel__muted" role="status">Memuat daftar anomali…</p>
+      }
+      @case ('error') {
+        <p class="anomaly-panel__error" role="alert">Daftar anomali tidak dapat dimuat.</p>
+      }
+      @default {
+        @if (events().length === 0) {
+          <p class="anomaly-panel__muted">Belum ada kejadian anomali untuk komponen ini.</p>
+        } @else {
+          <p class="anomaly-panel__muted">Menampilkan {{ events().length }} kejadian terbaru</p>
+          <ul class="event-list">
+            @for (e of events(); track e.anomaly_id) {
+              <li>
+                <button
+                  type="button"
+                  class="event"
+                  [class.event--selected]="e.anomaly_id === selectedAnomalyId()"
+                  [attr.aria-pressed]="e.anomaly_id === selectedAnomalyId()"
+                  (click)="eventSelected.emit(e.anomaly_id)"
+                >
+                  <span class="event__dot" [style.background]="severityColor(e.severity)" aria-hidden="true"></span>
+                  <span class="event__main">
+                    <strong>{{ severityLabel(e.severity) }}</strong> · {{ methodLabel(e.detection_method) }}
+                    <span class="event__time">{{ e.detected_at | date: 'dd/MM/yyyy HH:mm:ss' }}</span>
+                  </span>
+                  <span class="event__status">{{ e.resolved ? 'Sudah ditangani' : 'Belum ditangani' }}</span>
+                </button>
+                @if (e.resolved && e.resolution_notes) {
+                  <p class="event__notes">Catatan penyelesaian: {{ e.resolution_notes }}</p>
+                }
+              </li>
+            }
+          </ul>
+        }
+      }
+    }
+  </section>
+
+  <section class="anomaly-panel__section" aria-label="Grafik pembacaan sensor">
+    <h4 class="anomaly-panel__subtitle">Pembacaan sensor (±{{ halfWindowMinutes }} menit)</h4>
+    @if (!selectedEvent()) {
+      <p class="anomaly-panel__muted">Pilih satu kejadian untuk melihat pembacaan sensor di sekitarnya.</p>
+    } @else {
+      @switch (traceStatus()) {
+        @case ('loading') {
+          <p class="anomaly-panel__muted" role="status">Memuat pembacaan sensor…</p>
+        }
+        @case ('error') {
+          <p class="anomaly-panel__error" role="alert">Pembacaan sensor tidak dapat dimuat.</p>
+        }
+        @default {
+          @if (trace()?.readings?.length === 0) {
+            <p class="anomaly-panel__muted">Tidak ada pembacaan sensor dalam jendela waktu ini.</p>
+          }
+          @if (trace()?.truncated) {
+            <p class="anomaly-panel__notice">Data dipotong: hanya titik-titik terawal di jendela ini yang ditampilkan.</p>
+          }
+        }
+      }
+    }
+    <div #traceContainer class="trace-chart" role="img" [attr.aria-label]="traceSummary()"></div>
+  </section>
+</aside>

@@ -114,3 +114,25 @@ export function traceWindowAround(detectedAt: string): TraceWindow {
     end: new Date(center + half).toISOString(),
   };
 }
+
+const SEVERITY_LABEL: Record<string, string> = {
+  low: 'Rendah',
+  medium: 'Sedang',
+  high: 'Tinggi',
+  critical: 'Kritis',
+};
+
+/** Label Indonesia sama dengan AnomalyEvent.Severity di backend. */
+export function severityLabel(severity: string): string {
+  return SEVERITY_LABEL[severity] ?? severity;
+}
+
+const DETECTION_METHOD_LABEL: Record<string, string> = {
+  threshold: 'Ambang statistik',
+  kalman_residual: 'Residual Kalman',
+  pinn_residual: 'Residual PINN',
+};
+
+export function detectionMethodLabel(method: string): string {
+  return DETECTION_METHOD_LABEL[method] ?? method;
+}
