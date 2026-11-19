@@ -78,3 +78,14 @@ class AnomalyMarkerOut(Schema):
     detected_at: datetime
     detection_method: str
     severity: str
+
+
+class AnomalyEventDetailOut(Schema):
+    """visualization.md §6: satu baris di panel detail marker (hanya baca)."""
+    anomaly_id: uuid.UUID
+    device_id: uuid.UUID
+    detected_at: datetime
+    detection_method: str
+    severity: str
+    resolved: bool
+    resolution_notes: str

@@ -34,6 +34,7 @@ from __future__ import annotations
 import uuid
 
 from apps.sensors.models import AnomalyEvent
+from config.assetnexus import DIGITAL_TWIN
 
 
 class AnomalyMarkerService:
@@ -70,4 +71,32 @@ class AnomalyMarkerService:
                 "severity": event.severity,
             }
             for event in events
+        ]
+
+    def list_for_component(
+        self, organization_id: uuid.UUID, asset_id: uuid.UUID, component_type: str
+    ) -> list[dict]:
+        """Panel detail klik marker: event TERBARU komponen ini, termasuk
+        yang resolved dan severity low (hanya marker yang dibatasi unresolved
+        dan >= medium). Dibatasi di server; -id memutus seri detected_at."""
+        events = (
+            AnomalyEvent.objects.for_organization(organization_id)
+            .filter(
+                device__component__asset_id=asset_id,
+                device__component__component_type=component_type,
+                deleted_at__isnull=True,
+            )
+            .order_by("-detected_at", "-id")[: DIGITAL_TWIN["ANOMALY_PANEL_MAX_EVENTS"]]
+        )
+        return [
+            {
+                "anomaly_id": e.id,
+                "device_id": e.device_id,
+                "detected_at": e.detected_at,
+                "detection_method": e.detection_method,
+                "severity": e.severity,
+                "resolved": e.resolved,
+                "resolution_notes": e.resolution_notes,
+            }
+            for e in events
         ]

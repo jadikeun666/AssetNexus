@@ -22,6 +22,7 @@ from apps.digitaltwin.services_validation import InvalidGltfError, TriangleCount
 from apps.digitaltwin.services_viewer import DigitalTwinViewerPayloadService
 
 from .schemas import (
+    AnomalyEventDetailOut,
     AnomalyMarkerOut,
     DigitalTwinUploadOut,
     MaintenanceMarkerOut,
@@ -126,3 +127,10 @@ def download_digital_twin_model(request, model_id: UUID):
     data = download_bytes(model.file_ref)
     return HttpResponse(data, content_type="model/gltf-binary")
 
+
+
+@router.get("/assets/{asset_id}/anomaly-events/", response=list[AnomalyEventDetailOut])
+def get_anomaly_events(request, asset_id: UUID, component_type: str):
+    """visualization.md §6: panel detail saat marker diklik."""
+    org_id = _current_org_stub(request)
+    return anomaly_marker_service.list_for_component(org_id, asset_id, component_type)

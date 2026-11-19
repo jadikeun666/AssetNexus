@@ -118,6 +118,8 @@ DIGITAL_TWIN = {
     # ketiga). BEDA dari rentang emissive CS5: marker anomaly harus
     # selalu terlihat jelas. Duplikasi manual di
     # digital-twin.constants.ts.
+    "ANOMALY_PANEL_MAX_EVENTS": 20,            # visualization.md §6: batas event di
+    # panel detail marker; diterapkan di server (frontend tidak menghitung).
 }
 
 SENSORS = {
