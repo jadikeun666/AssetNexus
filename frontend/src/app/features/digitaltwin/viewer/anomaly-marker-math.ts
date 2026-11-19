@@ -136,3 +136,33 @@ const DETECTION_METHOD_LABEL: Record<string, string> = {
 export function detectionMethodLabel(method: string): string {
   return DETECTION_METHOD_LABEL[method] ?? method;
 }
+
+/** Toleransi gerak pointer (px) agar sebuah gestur dianggap klik, bukan drag kamera. */
+export const CLICK_MAX_MOVE_PX = 5;
+
+/**
+ * Membedakan klik dari drag OrbitControls: pointerdown dan pointerup harus
+ * berjarak <= maxMovePx. Tanpa ini, drag yang berhenti di atas marker
+ * akan membuka panel.
+ */
+export function isClickGesture(
+  down: { x: number; y: number },
+  up: { x: number; y: number },
+  maxMovePx: number = CLICK_MAX_MOVE_PX,
+): boolean {
+  return Math.hypot(up.x - down.x, up.y - down.y) <= maxMovePx;
+}
+
+/**
+ * Domain sumbu y untuk grafik trace. Satu nilai (atau semua nilai sama)
+ * membuat domain Plot degenerate -> label tick jadi "5,000.000000" dan
+ * terpotong; diberi bantalan 1% agar tick rapi.
+ * shortcut: bantalan tetap 1%, ganti bila sensor dengan nilai ~0 butuh skala lain.
+ */
+export function yDomainFor(values: number[]): [number, number] {
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  if (min !== max) return [min, max];
+  const pad = Math.abs(min) * 0.01 || 1;
+  return [min - pad, max + pad];
+}

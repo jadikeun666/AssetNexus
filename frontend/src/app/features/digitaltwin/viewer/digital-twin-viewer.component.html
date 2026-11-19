@@ -1,6 +1,41 @@
-<div class="viewer-wrapper">
-  <div class="viewer-container" #canvasContainer></div>
+<div class="viewer-wrapper" (keydown.escape)="closeAnomalyPanel()">
+  <div class="viewer-container" #canvasContainer tabindex="-1"></div>
   <p class="viewer-hint">tahan <kbd>Shift</kbd> untuk mode presisi (kamera berhenti instan)</p>
+
+  <!-- visualization.md §6: marker 3D tidak bisa difokuskan keyboard, jadi daftar
+       tombol ini adalah jalur keyboard/sentuh ke panel detail anomali yang sama. -->
+  @if (anomalyHotspots().length > 0) {
+    <ul class="viewer-hotspots" aria-label="Anomali per komponen">
+      @for (h of anomalyHotspots(); track h.componentType) {
+        <li>
+          <button
+            type="button"
+            class="viewer-hotspots__btn"
+            [attr.aria-pressed]="panelComponentType() === h.componentType"
+            (click)="openAnomalyPanel(h.componentType)"
+          >
+            Anomali: {{ h.componentType }} ({{ severityLabel(h.worstSeverity) }})
+          </button>
+        </li>
+      }
+    </ul>
+  }
+
+  @if (panelComponentType(); as type) {
+    <div class="viewer-panel">
+      <app-anomaly-detail-panel
+        [componentType]="type"
+        [worstSeverity]="panelWorstSeverity()"
+        [events]="panelEvents()"
+        [eventsStatus]="panelEventsStatus()"
+        [selectedAnomalyId]="panelSelectedId()"
+        [trace]="panelTrace()"
+        [traceStatus]="panelTraceStatus()"
+        (closed)="closeAnomalyPanel()"
+        (eventSelected)="selectAnomalyEvent($event)"
+      />
+    </div>
+  }
 </div>
 
 <!-- visualization.md §4: timeline scrubber. Drag = instan tanpa easing

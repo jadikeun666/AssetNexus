@@ -5,11 +5,13 @@ import {
   ElementRef,
   OnDestroy,
   ViewChild,
+  computed,
   inject,
   input,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subscription } from 'rxjs';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -28,16 +30,22 @@ import {
 } from './timeline-math';
 import { DIGITAL_TWIN } from './digital-twin.constants';
 import {
+  AnomalyEventDetailDto,
   AnomalyMarkerDto,
   AssetAlertsPayload,
   MaintenanceMarkerDto,
+  SensorTraceDto,
 } from '../../../core/models/digital-twin.model';
 import {
   groupMarkersIntoHotspots,
+  isClickGesture,
   mergeAnomalyMarker,
+  severityLabel,
   severityToColor,
+  traceWindowAround,
 } from './anomaly-marker-math';
 import { createWarningTriangleTexture } from './anomaly-marker-texture';
+import { AnomalyDetailPanelComponent, PanelStatus } from './anomaly-detail-panel.component';
 
 // visualization.md §1: "renders in a fixed neutral gray" untuk node
 // tanpa match component -- kode hex TIDAK dispesifikasikan dokumen,
@@ -81,6 +89,7 @@ const NEUTRAL_GRAY_RGB = { r: 0x9e, g: 0x9e, b: 0x9e };
 @Component({
   selector: 'app-digital-twin-viewer',
   standalone: true,
+  imports: [AnomalyDetailPanelComponent],
   templateUrl: './digital-twin-viewer.component.html',
   styleUrl: './digital-twin-viewer.component.scss',
 })
@@ -107,6 +116,39 @@ export class DigitalTwinViewerComponent implements AfterViewInit, OnDestroy {
   readonly anomalyMarkers = signal<AnomalyMarkerDto[]>([]);
   private anomalyAlertsSocket?: WebSocket;
   private readonly anomalySprites = new Map<string, THREE.Sprite>();
+
+  // visualization.md §6: klik marker -> panel detail. Viewer memegang state
+  // dan request; AnomalyDetailPanelComponent hanya menampilkan.
+  readonly anomalyHotspots = computed(() => groupMarkersIntoHotspots(this.anomalyMarkers()));
+  readonly severityLabel = severityLabel;
+  readonly panelComponentType = signal<string | null>(null);
+  readonly panelEvents = signal<AnomalyEventDetailDto[]>([]);
+  readonly panelEventsStatus = signal<PanelStatus>('loading');
+  readonly panelSelectedId = signal<string | null>(null);
+  readonly panelTrace = signal<SensorTraceDto | null>(null);
+  readonly panelTraceStatus = signal<PanelStatus>('loading');
+  readonly panelWorstSeverity = computed(
+    () =>
+      this.anomalyHotspots().find((h) => h.componentType === this.panelComponentType())
+        ?.worstSeverity ?? 'medium',
+  );
+  private eventsSubscription?: Subscription;
+  private traceSubscription?: Subscription;
+  private pointerDownAt?: { x: number; y: number };
+
+  private readonly handlePointerDown = (event: PointerEvent) => {
+    this.pointerDownAt =
+      event.button === 0 ? { x: event.clientX, y: event.clientY } : undefined;
+  };
+
+  private readonly handlePointerUp = (event: PointerEvent) => {
+    const down = this.pointerDownAt;
+    this.pointerDownAt = undefined;
+    if (!down || event.button !== 0) return;
+    if (!isClickGesture(down, { x: event.clientX, y: event.clientY })) return;
+    const hit = this.pickAnomalyHotspot(event);
+    if (hit) this.openAnomalyPanel(hit);
+  };
   /** Satu tekstur ikon bersama untuk semua sprite. undefined = belum dibuat,
    *  null = canvas 2D tidak tersedia (fallback ke kotak berwarna). Dibuang
    *  SEKALI di ngOnDestroy -- material.dispose() tidak membuang map. */
@@ -159,6 +201,10 @@ export class DigitalTwinViewerComponent implements AfterViewInit, OnDestroy {
     }
     this.controls?.dispose();
     this.renderer?.dispose();
+    this.renderer?.domElement.removeEventListener('pointerdown', this.handlePointerDown);
+    this.renderer?.domElement.removeEventListener('pointerup', this.handlePointerUp);
+    this.eventsSubscription?.unsubscribe();
+    this.traceSubscription?.unsubscribe();
     this.anomalyAlertsSocket?.close();
     this.disposeAnomalySprites();
     this.anomalyIconTexture?.dispose();
@@ -201,6 +247,9 @@ export class DigitalTwinViewerComponent implements AfterViewInit, OnDestroy {
 
     this.controls.addEventListener('start', () => this.startSettleLoop());
     this.controls.addEventListener('end', () => this.scheduleStopSettleLoop());
+
+    this.renderer.domElement.addEventListener('pointerdown', this.handlePointerDown);
+    this.renderer.domElement.addEventListener('pointerup', this.handlePointerUp);
   }
 
   /**
@@ -350,6 +399,85 @@ export class DigitalTwinViewerComponent implements AfterViewInit, OnDestroy {
     }
 
     this.render();
+  }
+
+  /**
+   * Raycast ke sprite hotspot. shortcut: area klik = seluruh kotak sprite
+   * (termasuk sudut transparan ikon); upgrade bila marker tampak terlalu kecil
+   * di layar. Mengembalikan component_type yang diklik, atau null.
+   */
+  private pickAnomalyHotspot(event: PointerEvent): string | null {
+    if (!this.renderer || !this.camera || this.anomalySprites.size === 0) return null;
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    const ndc = new THREE.Vector2(
+      ((event.clientX - rect.left) / rect.width) * 2 - 1,
+      -((event.clientY - rect.top) / rect.height) * 2 + 1,
+    );
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(ndc, this.camera);
+
+    const entries = [...this.anomalySprites.entries()];
+    const hits = raycaster.intersectObjects(
+      entries.map(([, sprite]) => sprite),
+      false,
+    );
+    if (hits.length === 0) return null;
+    return entries.find(([, sprite]) => sprite === hits[0].object)?.[0] ?? null;
+  }
+
+  /** Buka panel untuk satu component_type; event teratas dipilih otomatis. */
+  openAnomalyPanel(componentType: string): void {
+    this.eventsSubscription?.unsubscribe();
+    this.traceSubscription?.unsubscribe();
+    this.panelComponentType.set(componentType);
+    this.panelEvents.set([]);
+    this.panelEventsStatus.set('loading');
+    this.panelSelectedId.set(null);
+    this.panelTrace.set(null);
+    this.panelTraceStatus.set('loading');
+
+    this.eventsSubscription = this.digitalTwinService
+      .getAnomalyEvents(this.organizationId(), this.assetId(), componentType)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (events) => {
+          this.panelEvents.set(events);
+          this.panelEventsStatus.set('ready');
+          if (events.length > 0) this.selectAnomalyEvent(events[0].anomaly_id);
+        },
+        error: () => this.panelEventsStatus.set('error'),
+      });
+  }
+
+  /** Pilih satu event: ambil sensor trace +/- jendela di sekitar detected_at. */
+  selectAnomalyEvent(anomalyId: string): void {
+    const event = this.panelEvents().find((e) => e.anomaly_id === anomalyId);
+    if (!event) return;
+    this.traceSubscription?.unsubscribe();
+    this.panelSelectedId.set(anomalyId);
+    this.panelTrace.set(null);
+    this.panelTraceStatus.set('loading');
+
+    const window = traceWindowAround(event.detected_at);
+    this.traceSubscription = this.digitalTwinService
+      .getSensorTrace(this.organizationId(), event.device_id, window.start, window.end)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (trace) => {
+          this.panelTrace.set(trace);
+          this.panelTraceStatus.set('ready');
+        },
+        error: () => this.panelTraceStatus.set('error'),
+      });
+  }
+
+  /** Tutup panel, batalkan request yang berjalan, kembalikan fokus ke viewer. */
+  closeAnomalyPanel(): void {
+    if (this.panelComponentType() === null) return;
+    this.eventsSubscription?.unsubscribe();
+    this.traceSubscription?.unsubscribe();
+    this.panelComponentType.set(null);
+    this.canvasContainer.nativeElement.focus();
   }
 
   private disposeAnomalySprites(): void {

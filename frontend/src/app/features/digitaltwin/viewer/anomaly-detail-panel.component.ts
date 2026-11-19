@@ -11,6 +11,7 @@ import {
   output,
 } from '@angular/core';
 import * as Plot from '@observablehq/plot';
+import { yDomainFor } from './anomaly-marker-math';
 
 import { AnomalyEventDetailDto, SensorTraceDto } from '../../../core/models/digital-twin.model';
 import { detectionMethodLabel, severityLabel, severityToColor } from './anomaly-marker-math';
@@ -97,8 +98,8 @@ export class AnomalyDetailPanelComponent implements AfterViewInit, OnDestroy {
       width: container.clientWidth || 340,
       height: 220,
       marginLeft: 48,
-      x: { type: 'time', label: null },
-      y: { label: trace.readings[0].unit },
+      x: { type: 'time', label: null, domain: [new Date(trace.start), new Date(trace.end)] },
+      y: { label: trace.readings[0].unit, domain: yDomainFor(data.map((d) => d.value)) },
       marks: [
         Plot.gridY({ stroke: 'currentColor', strokeOpacity: 0.08 }),
         Plot.lineY(data, { x: 'time', y: 'value', stroke: '#142A45', strokeWidth: 1.5 }),

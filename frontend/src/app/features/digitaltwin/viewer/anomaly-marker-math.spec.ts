@@ -1,3 +1,4 @@
+import { yDomainFor } from './anomaly-marker-math';
 import {
   ComponentHotspot,
   groupMarkersIntoHotspots,
@@ -6,6 +7,7 @@ import {
   traceWindowAround,
   severityLabel,
   detectionMethodLabel,
+  isClickGesture,
 } from './anomaly-marker-math';
 import { AnomalyMarkerDto, AssetAlertsPayload } from '../../../core/models/digital-twin.model';
 
@@ -157,5 +159,34 @@ describe('detectionMethodLabel', () => {
 
   it('mengembalikan nilai asli untuk metode tak dikenal', () => {
     expect(detectionMethodLabel('x')).toBe('x');
+  });
+});
+
+describe('isClickGesture', () => {
+  it('menerima pointer yang tidak bergerak', () => {
+    expect(isClickGesture({ x: 10, y: 10 }, { x: 10, y: 10 })).toBe(true);
+  });
+
+  it('menerima gerak tepat di batas 5px (3-4-5)', () => {
+    expect(isClickGesture({ x: 0, y: 0 }, { x: 3, y: 4 })).toBe(true);
+  });
+
+  it('menolak gerak melewati batas (4,4 = 5.66px)', () => {
+    expect(isClickGesture({ x: 0, y: 0 }, { x: 4, y: 4 })).toBe(false);
+  });
+
+  it('menghormati batas khusus', () => {
+    expect(isClickGesture({ x: 0, y: 0 }, { x: 0, y: 20 }, 25)).toBe(true);
+    expect(isClickGesture({ x: 0, y: 0 }, { x: 0, y: 20 }, 10)).toBe(false);
+  });
+});
+
+describe('yDomainFor', () => {
+  it('memberi bantalan saat semua nilai sama', () => {
+    expect(yDomainFor([5000])).toEqual([4950, 5050]);
+    expect(yDomainFor([0, 0])).toEqual([-1, 1]);
+  });
+  it('memakai min/max apa adanya saat nilai bervariasi', () => {
+    expect(yDomainFor([3, 1, 2])).toEqual([1, 3]);
   });
 });
