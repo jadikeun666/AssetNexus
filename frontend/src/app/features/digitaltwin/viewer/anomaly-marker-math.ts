@@ -4,6 +4,7 @@
  * timeline-math.ts -- supaya testable tanpa mock WebGL/canvas.
  */
 import { AnomalyMarkerDto, AssetAlertsPayload } from '../../../core/models/digital-twin.model';
+import { DIGITAL_TWIN } from './digital-twin.constants';
 
 const SEVERITY_RANK: Record<string, number> = {
   medium: 1,
@@ -93,4 +94,23 @@ export function groupMarkersIntoHotspots(markers: AnomalyMarkerDto[]): Component
     events[0].severity);
     return { componentType, worstSeverity, eventCount: events.length };
   });
+}
+
+export interface TraceWindow {
+  start: string;
+  end: string;
+}
+
+/**
+ * visualization.md §6: jendela grafik sensor trace di sekitar detected_at,
+ * +/- ANOMALY_TRACE_HALF_WINDOW_MINUTES. Output selalu ISO 8601 UTC ('Z'),
+ * apa pun offset input -- backend menolak waktu tanpa zona.
+ */
+export function traceWindowAround(detectedAt: string): TraceWindow {
+  const center = new Date(detectedAt).getTime();
+  const half = DIGITAL_TWIN.ANOMALY_TRACE_HALF_WINDOW_MINUTES * 60_000;
+  return {
+    start: new Date(center - half).toISOString(),
+    end: new Date(center + half).toISOString(),
+  };
 }

@@ -3,6 +3,7 @@ import {
   groupMarkersIntoHotspots,
   mergeAnomalyMarker,
   severityToColor,
+  traceWindowAround,
 } from './anomaly-marker-math';
 import { AnomalyMarkerDto, AssetAlertsPayload } from '../../../core/models/digital-twin.model';
 
@@ -101,5 +102,33 @@ describe('groupMarkersIntoHotspots', () => {
 
   it('array kosong menghasilkan hotspot kosong', () => {
     expect(groupMarkersIntoHotspots([])).toEqual([]);
+  });
+});
+
+describe('traceWindowAround', () => {
+  it('membuat jendela +/- 1 jam dan mempertahankan milidetik', () => {
+    expect(traceWindowAround('2026-09-11T06:16:52.604Z')).toEqual({
+      start: '2026-09-11T05:16:52.604Z',
+      end: '2026-09-11T07:16:52.604Z',
+    });
+  });
+
+  it('melewati tengah malam dengan benar', () => {
+    expect(traceWindowAround('2026-08-19T00:00:00Z')).toEqual({
+      start: '2026-08-18T23:00:00.000Z',
+      end: '2026-08-19T01:00:00.000Z',
+    });
+  });
+
+  it('menormalkan offset zona waktu ke UTC', () => {
+    expect(traceWindowAround('2026-09-11T13:16:52+07:00')).toEqual({
+      start: '2026-09-11T05:16:52.000Z',
+      end: '2026-09-11T07:16:52.000Z',
+    });
+  });
+
+  it('lebar total jendela tepat 2 jam', () => {
+    const w = traceWindowAround('2026-09-11T06:16:52Z');
+    expect(new Date(w.end).getTime() - new Date(w.start).getTime()).toBe(7_200_000);
   });
 });

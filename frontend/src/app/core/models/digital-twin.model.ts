@@ -75,3 +75,30 @@ export interface AssetAlertsPayload {
   detection_method: string;
   severity: string;
 }
+
+/** GET /digitaltwin/assets/{id}/anomaly-events/ (visualization.md §6, panel detail). */
+export interface AnomalyEventDetailDto {
+  anomaly_id: string;
+  device_id: string;
+  detected_at: string;
+  detection_method: string;
+  severity: string;
+  resolved: boolean;
+  resolution_notes: string;
+}
+
+export interface SensorReadingDto {
+  timestamp: string;
+  value: number;
+  unit: string;
+  quality_flag: string;
+}
+
+/** GET /sensors/devices/{id}/readings/ (visualization.md §6, sensor trace). */
+export interface SensorTraceDto {
+  device_id: string;
+  start: string;
+  end: string;
+  truncated: boolean;
+  readings: SensorReadingDto[];
+}

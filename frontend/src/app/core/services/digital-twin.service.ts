@@ -4,10 +4,12 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import {
+  AnomalyEventDetailDto,
   AnomalyMarkerDto,
   AssetAlertsPayload,
   DigitalTwinUploadResponseDto,
   MaintenanceMarkerDto,
+  SensorTraceDto,
   ViewerPayloadDto,
 } from '../models/digital-twin.model';
 
@@ -75,6 +77,42 @@ export class DigitalTwinService {
     return this.http.get<AnomalyMarkerDto[]>(
       `${this.baseUrl}/assets/${assetId}/anomaly-markers/`,
       { headers: { 'X-Organization-Id': organizationId } },
+    );
+  }
+
+  /**
+   * visualization.md §6: daftar event untuk panel detail marker (hanya
+   * baca). Batas jumlah diterapkan di server (ANOMALY_PANEL_MAX_EVENTS).
+   */
+  getAnomalyEvents(
+    organizationId: string,
+    assetId: string,
+    componentType: string,
+  ): Observable<AnomalyEventDetailDto[]> {
+    return this.http.get<AnomalyEventDetailDto[]>(
+      `${this.baseUrl}/assets/${assetId}/anomaly-events/`,
+      {
+        headers: { 'X-Organization-Id': organizationId },
+        params: { component_type: componentType },
+      },
+    );
+  }
+
+  /**
+   * visualization.md §6: sensor trace. Endpoint-nya di app `sensors`
+   * (hanya sensors/deterioration yang boleh membaca Parquet, database.md
+   * §0), bukan di /digitaltwin -- karena itu tidak memakai this.baseUrl.
+   * start/end: ISO 8601 UTC berzona waktu (lihat traceWindowAround).
+   */
+  getSensorTrace(
+    organizationId: string,
+    deviceId: string,
+    start: string,
+    end: string,
+  ): Observable<SensorTraceDto> {
+    return this.http.get<SensorTraceDto>(
+      `${environment.apiBaseUrl}/sensors/devices/${deviceId}/readings/`,
+      { headers: { 'X-Organization-Id': organizationId }, params: { start, end } },
     );
   }
 

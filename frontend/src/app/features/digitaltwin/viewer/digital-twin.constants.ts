@@ -39,4 +39,7 @@ export const DIGITAL_TWIN = {
   // memang dirancang subtle), cuma berdenyut ringan, bukan nyaris mati.
   ANOMALY_MARKER_OPACITY_MIN: 0.4,
   ANOMALY_MARKER_OPACITY_MAX: 1.0,
+  // visualization.md §6: jendela grafik sensor trace = detected_at +/- ini
+  // (menit). Sumber: config/assetnexus.py DIGITAL_TWIN.
+  ANOMALY_TRACE_HALF_WINDOW_MINUTES: 60,
 } as const;

@@ -120,6 +120,9 @@ DIGITAL_TWIN = {
     # digital-twin.constants.ts.
     "ANOMALY_PANEL_MAX_EVENTS": 20,            # visualization.md §6: batas event di
     # panel detail marker; diterapkan di server (frontend tidak menghitung).
+    "ANOMALY_TRACE_HALF_WINDOW_MINUTES": 60,   # visualization.md §6: jendela grafik
+    # sensor trace = detected_at +/- nilai ini. Duplikasi manual di
+    # digital-twin.constants.ts. Jauh di bawah SENSORS.MAX_TRACE_WINDOW_HOURS.
 }
 
 SENSORS = {
